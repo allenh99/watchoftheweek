@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.models import Rating
 from app.schemas.schemas import RatingCreate
+from typing import List
 
 router = APIRouter()
 
@@ -20,3 +21,8 @@ def create_rating(rating: RatingCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_rating)
     return new_rating
+
+@router.get("/ratings", response_model=List[RatingCreate])
+def get_ratings(db: Session = Depends(get_db)):
+    ratings = db.query(Rating).all()
+    return ratings
