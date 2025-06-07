@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.models import Rating
@@ -14,6 +14,7 @@ def get_db():
     finally:
         db.close()
 
+#
 @router.post("/ratings")
 def create_rating(rating: RatingCreate, db: Session = Depends(get_db)):
     new_rating = Rating(user_id=1, **rating.dict())  # Hardcoded user
@@ -26,3 +27,22 @@ def create_rating(rating: RatingCreate, db: Session = Depends(get_db)):
 def get_ratings(db: Session = Depends(get_db)):
     ratings = db.query(Rating).all()
     return ratings
+
+
+@router.post("/ratings/upload")
+async def upload_ratings(user_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    # Read file into pandas DataFrame
+    contents = await file.read()
+    df = pd.read_csv(io.StringIO(contents.decode("utf-8")))
+
+    # Example expected columns: movie_id,rating
+    for _, row in df.iterrows():
+        rating = Rating(
+            user_id=user_id,
+            movie_id=row["movie_id"],
+            rating=row["rating"]
+        )
+        db.add(rating)
+    db.commit()
+
+    return {"message": f"Uploaded {len(df)} ratings for user {user_id}"}
