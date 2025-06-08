@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from app.database import SessionLocal
 from app.models.models import Movie, Rating
+from app.services import recommender
 
 router = APIRouter()
 
@@ -15,9 +16,9 @@ def get_db():
 
 #takes movies that the user has rated and passes them through recommendation engine
 @router.get("/recommendations/{user_id}")
-def recommend_movies(user_id: int, db: Session = Depends(get_db), limit: int = 5):
+def recommend_movies(user_id: int, db: Session = Depends(get_db)):
     rated_movie_ids = db.query(Rating.movie_id).filter(Rating.user_id == user_id).subquery()
-    recommendations = ()
+    recommendations = recommender.recommend(user_id,db)
 
     return {
         "user_id": user_id,

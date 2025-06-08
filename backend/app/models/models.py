@@ -13,6 +13,8 @@ class Movie(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String)
     genre = Column(String)
+    director = Column(String)
+    
 
 class Rating(Base):
     __tablename__ = "ratings"
