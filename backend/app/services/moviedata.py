@@ -3,6 +3,7 @@ import random
 from dotenv import load_dotenv
 import requests
 from themoviedb import TMDb
+import pandas as pd
 
 load_dotenv()
 
@@ -26,11 +27,11 @@ def get_top_100_movies():
     try:
         for i in range(5):
             movies_page = tmdb.movies().top_rated(page=i+1)
-            movies.extend(movies_page)
-        #print(movies)
-        return movies
+            movies.extend([movies_page.id,i.original_title,i.genre_ids])
+        for i in movies:
+            print(i.id,i.original_title,i.genre_ids)
     except Exception as e:
         print(f"Error fetching top 1000 movies: {e}")
         return None
 
-print(len(get_top_1000_movies()))
+    df = pd.DataFrame(movies, columns=['id', 'title', 'genre_ids'])

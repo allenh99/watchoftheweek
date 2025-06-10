@@ -9,3 +9,4 @@ SQLAlchemy==2.0.41
 uvicorn==0.34.2
 themoviedb[full]
 dotenv
+pandas
