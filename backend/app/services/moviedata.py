@@ -7,6 +7,9 @@ import pandas as pd
 
 load_dotenv()
 
+# Path to the data directory
+data_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data')
+
 tmdb_api_key = os.getenv("TMDB_API_KEY")
 
 tmdb = TMDb(key=tmdb_api_key, language="en-US")
@@ -70,14 +73,15 @@ def get_top_100_popular_movies():
 
 def export_movies_to_csv(df, filename='top_movies.csv'):
     """
-    Export movie data to a CSV file
+    Export movie data to a CSV file in the data directory
     Args:
         df: pandas DataFrame containing movie data
         filename: name of the output CSV file
     """
     try:
-        df.to_csv(filename, index=False)
-        print(f"Successfully exported movie data to {filename}")
+        filepath = os.path.join(data_dir, filename)
+        df.to_csv(filepath, index=False)
+        print(f"Successfully exported movie data to {filepath}")
     except Exception as e:
         print(f"Error exporting to CSV: {e}")
 
