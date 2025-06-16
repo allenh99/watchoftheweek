@@ -8,7 +8,7 @@ import pandas as pd
 load_dotenv()
 
 # Path to the data directory
-data_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data')
+data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
 
 tmdb_api_key = os.getenv("TMDB_API_KEY")
 
@@ -85,14 +85,10 @@ def export_movies_to_csv(df, filename='top_movies.csv'):
     except Exception as e:
         print(f"Error exporting to CSV: {e}")
 
-# Example usage:
-df = get_top_100_popular_movies()
-print(df)
-# if df is not None:
-#     export_movies_to_csv(df)
 
-# Example usage:
-# df_top_rated = get_top_100_movies()
-# df_popular = get_popular_movies()
-# if df_popular is not None:
-#     export_movies_to_csv(df_popular, 'popular_movies.csv')
+df_top_rated = get_top_100_rated_movies()
+df_popular = get_top_100_popular_movies()
+if df_popular is not None:
+    export_movies_to_csv(df_popular, 'top_popular_movies.csv')
+if df_top_rated is not None:
+    export_movies_to_csv(df_top_rated, 'top_rated_movies.csv')
