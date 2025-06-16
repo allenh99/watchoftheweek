@@ -3,7 +3,10 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.models import Rating
 from app.schemas.schemas import RatingCreate
+from app.services.moviedata import get_movie_id_by_name
 from typing import List
+import pandas as pd
+import io
 
 router = APIRouter()
 
@@ -35,12 +38,15 @@ async def upload_ratings(user_id: int, file: UploadFile = File(...), db: Session
     contents = await file.read()
     df = pd.read_csv(io.StringIO(contents.decode("utf-8")))
 
-    # Example expected columns: movie_id,rating
+
+    #TODO: Add movies to database if they don't exist
+
     for _, row in df.iterrows():
+        movie_id = get_movie_id_by_name(row["Name"])
         rating = Rating(
             user_id=user_id,
-            movie_id=row["movie_id"],
-            rating=row["rating"]
+            movie_id=movie_id,
+            rating=row["Rating"]
         )
         db.add(rating)
     db.commit()

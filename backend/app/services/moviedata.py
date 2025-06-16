@@ -85,6 +85,22 @@ def export_movies_to_csv(df, filename='top_movies.csv'):
     except Exception as e:
         print(f"Error exporting to CSV: {e}")
 
+def get_movie_id_by_name(movie_name):
+    """
+    Search for a movie by name and return its TMDB ID
+    Args:
+        movie_name: The name of the movie to search for
+    Returns:
+        int: The TMDB ID of the movie if found, None otherwise
+    """
+    try:
+        search_results = tmdb.search().movie(query=movie_name)
+        if search_results and len(search_results.results) > 0:
+            return search_results.results[0].id
+        return None
+    except Exception as e:
+        print(f"Error searching for movie: {e}")
+        return None
 
 df_top_rated = get_top_100_rated_movies()
 df_popular = get_top_100_popular_movies()

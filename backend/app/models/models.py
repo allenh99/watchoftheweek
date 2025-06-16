@@ -14,6 +14,7 @@ class Movie(Base):
     title = Column(String)
     genre = Column(String)
     director = Column(String)
+    year = Column(Integer)
     
 
 class Rating(Base):
