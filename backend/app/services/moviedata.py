@@ -17,9 +17,19 @@ tmdb = TMDb(key=tmdb_api_key, language="en-US")
 #grab movie data from tmdb api
 def get_movie_data(movie_id):
     try:
-        movie = tmdb.movies(movie_id)
-        movie_data = movie.info()
-        return movie_data
+        movie = tmdb.movie(movie_id).details()
+        # Return the same fields as the CSV data
+        return {
+            'id': movie.id,
+            'title': movie.original_title,
+            'genre_ids': movie.genre_ids,
+            'overview': movie.overview,
+            'release_date': movie.release_date,
+            'vote_average': movie.vote_average,
+            'vote_count': movie.vote_count,
+            'poster_path': movie.poster_path,
+            'original_language': movie.original_language
+        }
     except Exception as e:
         print(f"Error fetching movie data: {e}")
         return None
@@ -94,7 +104,7 @@ def get_movie_id_by_name(movie_name):
         int: The TMDB ID of the movie if found, None otherwise
     """
     try:
-        search_results = tmdb.search().movie(query=movie_name)
+        search_results = tmdb.search().movies(query=movie_name)
         if search_results and len(search_results.results) > 0:
             return search_results.results[0].id
         return None
@@ -102,9 +112,15 @@ def get_movie_id_by_name(movie_name):
         print(f"Error searching for movie: {e}")
         return None
 
-df_top_rated = get_top_100_rated_movies()
-df_popular = get_top_100_popular_movies()
-if df_popular is not None:
-    export_movies_to_csv(df_popular, 'top_popular_movies.csv')
-if df_top_rated is not None:
-    export_movies_to_csv(df_top_rated, 'top_rated_movies.csv')
+
+#EXPORT MOVIES TO CSV CODE
+# df_top_rated = get_top_100_rated_movies()
+# df_popular = get_top_100_popular_movies()
+# if df_popular is not None:
+#     export_movies_to_csv(df_popular, 'top_popular_movies.csv')
+# if df_top_rated is not None:
+#     export_movies_to_csv(df_top_rated, 'top_rated_movies.csv')
+
+#TESTING METHODS CODE
+#print(get_movie_id_by_name("The Dark Knight"))
+# print(get_movie_data(155))
