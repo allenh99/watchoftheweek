@@ -46,12 +46,19 @@ def recommend(user_id: int, db: Session, top_n: int = 10):
     # Combine all recommendations
     combined_recommendations = pd.concat(all_recommendations, ignore_index=True)
     
+    # Convert genre_ids to string for grouping (lists are unhashable)
+    combined_recommendations['genre_ids_str'] = combined_recommendations['genre_ids'].astype(str)
+    
     # Remove duplicates and aggregate scores
-    final_recommendations = combined_recommendations.groupby(['id', 'title', 'vote_average', 'vote_count', 'genre_ids']).agg({
+    final_recommendations = combined_recommendations.groupby(['id', 'title', 'vote_average', 'vote_count', 'genre_ids_str']).agg({
         'source_movie': lambda x: list(x),
         'user_rating': 'mean',
         'weighted_score': 'sum'
     }).reset_index()
+    
+    # Convert genre_ids back to list
+    final_recommendations['genre_ids'] = final_recommendations['genre_ids_str'].apply(eval)
+    final_recommendations = final_recommendations.drop('genre_ids_str', axis=1)
     
     # Sort by weighted score (higher is better)
     final_recommendations = final_recommendations.sort_values('weighted_score', ascending=False)

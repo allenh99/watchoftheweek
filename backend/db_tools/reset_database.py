@@ -1,0 +1,53 @@
+import os
+import sys
+# Add the parent directory (backend) to the path so we can import from app
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
+from sqlalchemy import create_engine
+from app.database import Base
+from app.models.models import User, Movie, Rating
+
+def reset_database():
+    """Reset the database by dropping all tables and recreating them"""
+    
+    # Database URL - adjust this to match your actual database path
+    DATABASE_URL = "sqlite:///./app.db"
+    
+    # Create engine
+    engine = create_engine(DATABASE_URL)
+    
+    print("Dropping all tables...")
+    # Drop all tables
+    Base.metadata.drop_all(bind=engine)
+    
+    print("Creating all tables...")
+    # Create all tables
+    Base.metadata.create_all(bind=engine)
+    
+    print("Database reset complete!")
+    print("All tables have been dropped and recreated.")
+
+def delete_database_file():
+    """Delete the database file completely"""
+    
+    db_file = "./app.db"
+    
+    if os.path.exists(db_file):
+        os.remove(db_file)
+        print(f"Database file '{db_file}' has been deleted.")
+    else:
+        print(f"Database file '{db_file}' not found.")
+
+if __name__ == "__main__":
+    print("Choose an option:")
+    print("1. Reset database (drop and recreate tables)")
+    print("2. Delete database file completely")
+    
+    choice = input("Enter your choice (1 or 2): ").strip()
+    
+    if choice == "1":
+        reset_database()
+    elif choice == "2":
+        delete_database_file()
+    else:
+        print("Invalid choice. Please run the script again.") 
