@@ -55,7 +55,21 @@ def recommend_movies(user_id: int, db: Session = Depends(get_db), top_n: int = 1
 def get_user_top_movies(user_id: int, db: Session = Depends(get_db), top_n: int = 10):
     """Get a user's top-rated movies"""
     try:
+        print(f"API: Getting top movies for user {user_id}")
+        
+        # First check if user exists and has ratings
+        user_ratings_count = db.query(Rating).filter(Rating.user_id == user_id).count()
+        print(f"API: User {user_id} has {user_ratings_count} ratings")
+        
+        if user_ratings_count == 0:
+            return {
+                "user_id": user_id,
+                "message": f"No ratings found for user {user_id}",
+                "top_movies": []
+            }
+        
         top_movies = recommender.get_user_top_movies(user_id, db, top_n=top_n)
+        print(f"API: Retrieved {len(top_movies)} top movies")
         
         return {
             "user_id": user_id,
@@ -63,4 +77,7 @@ def get_user_top_movies(user_id: int, db: Session = Depends(get_db), top_n: int 
         }
         
     except Exception as e:
+        print(f"API Error: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error fetching user top movies: {str(e)}")

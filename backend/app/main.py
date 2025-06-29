@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import ratings
+from app.api.routes import ratings, recommend
 from app.database import Base, engine
 from app.models import models
 
@@ -19,3 +19,4 @@ app.add_middleware(
 )
 
 app.include_router(ratings.router, prefix="/api")
+app.include_router(recommend.router, prefix="/api")

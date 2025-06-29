@@ -3,7 +3,7 @@ import sys
 # Add the parent directory (backend) to the path so we can import from app
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from app.database import Base
 from app.models.models import User, Movie, Rating
 
@@ -27,6 +27,33 @@ def reset_database():
     print("Database reset complete!")
     print("All tables have been dropped and recreated.")
 
+def check_database_schema():
+    """Check if the database schema matches the models"""
+    
+    DATABASE_URL = "sqlite:///./app.db"
+    engine = create_engine(DATABASE_URL)
+    inspector = inspect(engine)
+    
+    print("Checking database schema...")
+    
+    # Check movies table
+    if 'movies' in inspector.get_table_names():
+        movie_columns = [col['name'] for col in inspector.get_columns('movies')]
+        print(f"Movies table columns: {movie_columns}")
+        
+        expected_columns = ['id', 'title', 'genre', 'director', 'year']
+        missing_columns = [col for col in expected_columns if col not in movie_columns]
+        
+        if missing_columns:
+            print(f"Missing columns in movies table: {missing_columns}")
+            return False
+        else:
+            print("Movies table schema is correct!")
+            return True
+    else:
+        print("Movies table does not exist!")
+        return False
+
 def delete_database_file():
     """Delete the database file completely"""
     
@@ -42,12 +69,15 @@ if __name__ == "__main__":
     print("Choose an option:")
     print("1. Reset database (drop and recreate tables)")
     print("2. Delete database file completely")
+    print("3. Check database schema")
     
-    choice = input("Enter your choice (1 or 2): ").strip()
+    choice = input("Enter your choice (1, 2, or 3): ").strip()
     
     if choice == "1":
         reset_database()
     elif choice == "2":
         delete_database_file()
+    elif choice == "3":
+        check_database_schema()
     else:
         print("Invalid choice. Please run the script again.") 

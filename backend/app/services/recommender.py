@@ -79,18 +79,65 @@ def get_user_top_movies(user_id: int, db: Session, top_n: int = 10):
     Returns:
         List: User's top-rated movies with ratings
     """
-    user_ratings = db.query(Rating, Movie).join(Movie).filter(
-        Rating.user_id == user_id
-    ).order_by(desc(Rating.rating)).limit(top_n).all()
-    
-    return [
-        {
-            'movie_id': rating.movie_id,
-            'title': movie.title,
-            'rating': rating.rating,
-            'genre': movie.genre,
-            'director': movie.director,
-            'year': movie.year
-        }
-        for rating, movie in user_ratings
-    ] 
+    try:
+        # First, try to get just the ratings to see if they exist
+        ratings_only = db.query(Rating).filter(Rating.user_id == user_id).all()
+        print(f"Found {len(ratings_only)} ratings for user {user_id}")
+        
+        if not ratings_only:
+            print(f"No ratings found for user {user_id}")
+            return []
+        
+        # Try the full query with movie details
+        user_ratings = db.query(Rating, Movie).join(Movie).filter(
+            Rating.user_id == user_id
+        ).order_by(desc(Rating.rating)).limit(top_n).all()
+        
+        print(f"Query returned {len(user_ratings)} results with movie details")
+        
+        result = []
+        for rating, movie in user_ratings:
+            try:
+                movie_data = {
+                    'movie_id': rating.movie_id,
+                    'title': movie.title,
+                    'rating': rating.rating,
+                    'genre': getattr(movie, 'genre', None),
+                    'director': getattr(movie, 'director', None),
+                    'year': getattr(movie, 'year', None)
+                }
+                result.append(movie_data)
+            except Exception as e:
+                print(f"Error processing movie {movie.id}: {e}")
+                # Fallback: just return basic info
+                movie_data = {
+                    'movie_id': rating.movie_id,
+                    'title': f"Movie ID: {rating.movie_id}",
+                    'rating': rating.rating,
+                    'genre': None,
+                    'director': None,
+                    'year': None
+                }
+                result.append(movie_data)
+        
+        return result
+        
+    except Exception as e:
+        print(f"Error in get_user_top_movies: {e}")
+        # Fallback: return just ratings without movie details
+        try:
+            ratings = db.query(Rating).filter(Rating.user_id == user_id).order_by(desc(Rating.rating)).limit(top_n).all()
+            return [
+                {
+                    'movie_id': rating.movie_id,
+                    'title': f"Movie ID: {rating.movie_id}",
+                    'rating': rating.rating,
+                    'genre': None,
+                    'director': None,
+                    'year': None
+                }
+                for rating in ratings
+            ]
+        except Exception as e2:
+            print(f"Fallback query also failed: {e2}")
+            return [] 
