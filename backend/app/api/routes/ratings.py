@@ -59,12 +59,27 @@ async def upload_ratings(user_id: int, file: UploadFile = File(...), db: Session
             # Get movie data from TMDB and create movie record
             movie_data = get_movie_data(movie_id)
             if movie_data:
+                # Safely handle genre_ids which might be None
+                genre_ids = movie_data.get('genre_ids', [])
+                if genre_ids is None:
+                    genre_ids = []
+                
+                # Safely handle release_date which might be a datetime.date object
+                release_date = movie_data.get('release_date')
+                year = None
+                if release_date:
+                    if isinstance(release_date, str):
+                        year = int(release_date[:4]) if len(release_date) >= 4 else None
+                    else:
+                        # Handle datetime.date object
+                        year = release_date.year
+                
                 movie = Movie(
                     id=movie_data['id'],
                     title=movie_data['title'],
-                    genre=", ".join([str(g) for g in movie_data.get('genre_ids', [])]),
+                    genre=", ".join([str(g) for g in genre_ids]),
                     director="Unknown",  # TMDB doesn't provide director in basic movie data
-                    year=int(movie_data.get('release_date', '0')[:4]) if movie_data.get('release_date') else None
+                    year=year
                 )
                 db.add(movie)
                 print(f"Created movie record: {movie.title} (ID: {movie.id})")
