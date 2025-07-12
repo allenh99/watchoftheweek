@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import ratings, recommend
+from app.api.routes import ratings, recommend, auth
 from app.database import Base, engine
 from app.models import models
 
@@ -18,5 +18,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(ratings.router, prefix="/api")
 app.include_router(recommend.router, prefix="/api")

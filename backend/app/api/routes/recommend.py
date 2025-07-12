@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from app.database import SessionLocal
-from app.models.models import Movie, Rating
+from app.models.models import Movie, Rating, User
 from app.services import recommender
+from app.auth import get_current_user
 import pandas as pd
 
 router = APIRouter()
@@ -16,15 +17,15 @@ def get_db():
         db.close()
 
 #takes movies that the user has rated and passes them through recommendation engine
-@router.get("/recommendations/{user_id}")
-def recommend_movies(user_id: int, db: Session = Depends(get_db), top_n: int = 10):
+@router.get("/recommendations")
+def recommend_movies(db: Session = Depends(get_db), current_user: User = Depends(get_current_user), top_n: int = 10):
     try:
         # Get recommendations using the recommender service
-        recommendations_df = recommender.recommend(user_id, db, top_n=top_n)
+        recommendations_df = recommender.recommend(current_user.id, db, top_n=top_n)
         
         if recommendations_df is None or recommendations_df.empty:
             return {
-                "user_id": user_id,
+                "user_id": current_user.id,
                 "message": "No recommendations found. User may not have rated enough movies.",
                 "recommendations": []
             }
@@ -44,7 +45,7 @@ def recommend_movies(user_id: int, db: Session = Depends(get_db), top_n: int = 1
             })
         
         return {
-            "user_id": user_id,
+            "user_id": current_user.id,
             "recommendations": recommendations_list
         }
         

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import CSVUpload from '../components/CSVUpload';
+import AuthForm from '../components/AuthForm';
 
 interface Recommendation {
   movie_id: number;
@@ -14,19 +15,84 @@ interface Recommendation {
   user_rating: number;
 }
 
+interface User {
+  id: number;
+  username: string;
+  email: string;
+}
+
 export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [uploadResult, setUploadResult] = useState<any>(null);
-  const [userId, setUserId] = useState<string>('1');
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [recommendationsError, setRecommendationsError] = useState<string | null>(null);
 
+  // Check for existing token on component mount
+  useEffect(() => {
+    const savedToken = localStorage.getItem('authToken');
+    if (savedToken) {
+      setToken(savedToken);
+      setIsAuthenticated(true);
+      fetchCurrentUser(savedToken);
+    }
+  }, []);
+
+  const fetchCurrentUser = async (authToken: string) => {
+    try {
+      const response = await fetch('http://localhost:8000/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+
+      if (response.ok) {
+        const user = await response.json();
+        setCurrentUser(user);
+      } else {
+        // Token is invalid, clear it
+        handleLogout();
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      handleLogout();
+    }
+  };
+
+  const handleLogin = (authToken: string) => {
+    setToken(authToken);
+    setIsAuthenticated(true);
+    localStorage.setItem('authToken', authToken);
+    fetchCurrentUser(authToken);
+  };
+
+  const handleRegister = (authToken: string) => {
+    setToken(authToken);
+    setIsAuthenticated(true);
+    localStorage.setItem('authToken', authToken);
+    fetchCurrentUser(authToken);
+  };
+
+  const handleLogout = () => {
+    setToken(null);
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    localStorage.removeItem('authToken');
+    setRecommendations([]);
+    setRecommendationsError(null);
+    setUploadedFile(null);
+    setUploadStatus(null);
+    setUploadResult(null);
+  };
+
   const handleFileUpload = async (file: File) => {
-    if (!userId || isNaN(Number(userId))) {
-      setUploadStatus('Please enter a valid user ID');
+    if (!token) {
+      setUploadStatus('Please login first');
       return;
     }
 
@@ -39,9 +105,12 @@ export default function Home() {
       const formData = new FormData();
       formData.append('file', file);
 
-      // Call the backend API endpoint with user_id as query parameter
-      const response = await fetch(`http://localhost:8000/api/ratings/upload?user_id=${userId}`, {
+      // Call the backend API endpoint with authentication
+      const response = await fetch('http://localhost:8000/api/ratings/upload', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: formData,
       });
 
@@ -54,7 +123,12 @@ export default function Home() {
         setRecommendations([]);
         setRecommendationsError(null);
       } else {
-        setUploadStatus(`Upload failed: ${result.detail || result.error || 'Please try again.'}`);
+        if (response.status === 401) {
+          handleLogout();
+          setUploadStatus('Session expired. Please login again.');
+        } else {
+          setUploadStatus(`Upload failed: ${result.detail || result.error || 'Please try again.'}`);
+        }
         setUploadResult(null);
       }
     } catch (error) {
@@ -67,8 +141,8 @@ export default function Home() {
   };
 
   const handleGetRecommendations = async () => {
-    if (!userId || isNaN(Number(userId))) {
-      setRecommendationsError('Please enter a valid user ID');
+    if (!token) {
+      setRecommendationsError('Please login first');
       return;
     }
 
@@ -76,7 +150,11 @@ export default function Home() {
     setRecommendationsError(null);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/recommendations/${userId}?top_n=10`);
+      const response = await fetch('http://localhost:8000/api/recommendations?top_n=10', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       const result = await response.json();
 
       if (response.ok) {
@@ -85,7 +163,12 @@ export default function Home() {
           setRecommendationsError(result.message);
         }
       } else {
-        setRecommendationsError(`Failed to get recommendations: ${result.detail || 'Please try again.'}`);
+        if (response.status === 401) {
+          handleLogout();
+          setRecommendationsError('Session expired. Please login again.');
+        } else {
+          setRecommendationsError(`Failed to get recommendations: ${result.detail || 'Please try again.'}`);
+        }
         setRecommendations([]);
       }
     } catch (error) {
@@ -97,37 +180,54 @@ export default function Home() {
     }
   };
 
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Movie Recommendation Engine
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Sign in to upload your movie ratings and get personalized recommendations
+              </p>
+            </div>
+
+            {/* Auth Form */}
+            <AuthForm onLogin={handleLogin} onRegister={handleRegister} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Movie Ratings Upload
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Upload your CSV file with movie ratings to get started
-            </p>
-          </div>
-
-          {/* User ID Input */}
-          <div className="mb-6">
-            <label htmlFor="userId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              User ID
-            </label>
-            <input
-              type="number"
-              id="userId"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
-              placeholder="Enter user ID"
-              min="1"
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              The user ID will be associated with all ratings in the uploaded file
-            </p>
+          {/* Header with User Info */}
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Movie Recommendation Engine
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Welcome back, {currentUser?.username}! Upload your movie ratings to get started
+              </p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {currentUser?.email}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                Logout
+              </button>
+            </div>
           </div>
 
           {/* Upload Component */}

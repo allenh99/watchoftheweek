@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
-from app.models.models import Rating, Movie
+from app.models.models import Rating, Movie, User
 from app.schemas.schemas import RatingCreate, RatingOut
 from app.services.moviedata import get_movie_id_by_name, get_movie_data
+from app.auth import get_current_user
 from typing import List
 import pandas as pd
 import io
@@ -34,7 +35,7 @@ def get_ratings(db: Session = Depends(get_db)):
 
 
 @router.post("/ratings/upload")
-async def upload_ratings(user_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_ratings(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     # Read file into pandas DataFrame
     contents = await file.read()
     df = pd.read_csv(io.StringIO(contents.decode("utf-8")))
@@ -96,7 +97,7 @@ async def upload_ratings(user_id: int, file: UploadFile = File(...), db: Session
                 print(f"Created basic movie record: {movie_name} (ID: {movie_id})")
             
         rating = Rating(
-            user_id=user_id,
+            user_id=current_user.id,
             movie_id=movie_id,
             rating=row["Rating"]
         )
@@ -106,7 +107,7 @@ async def upload_ratings(user_id: int, file: UploadFile = File(...), db: Session
     db.commit()
 
     return {
-        "message": f"Upload completed for user {user_id}",
+        "message": f"Upload completed for user {current_user.username}",
         "successful_uploads": successful_uploads,
         "failed_uploads": failed_uploads,
         "failed_movies": failed_movies
