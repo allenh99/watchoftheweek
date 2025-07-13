@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import CSVUpload from '../components/CSVUpload';
 import AuthForm from '../components/AuthForm';
 
 interface Recommendation {
@@ -25,11 +24,7 @@ export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
-  const [uploadResult, setUploadResult] = useState<any>(null);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [recommendationsError, setRecommendationsError] = useState<string | null>(null);
 
@@ -85,59 +80,6 @@ export default function Home() {
     localStorage.removeItem('authToken');
     setRecommendations([]);
     setRecommendationsError(null);
-    setUploadedFile(null);
-    setUploadStatus(null);
-    setUploadResult(null);
-  };
-
-  const handleFileUpload = async (file: File) => {
-    if (!token) {
-      setUploadStatus('Please login first');
-      return;
-    }
-
-    setIsUploading(true);
-    setUploadStatus('Uploading file...');
-    setUploadedFile(file);
-
-    try {
-      // Create FormData to send the file
-      const formData = new FormData();
-      formData.append('file', file);
-
-      // Call the backend API endpoint with authentication
-      const response = await fetch('http://localhost:8000/api/ratings/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        setUploadStatus(`File uploaded successfully! ${result.message || ''}`);
-        setUploadResult(result);
-        // Clear previous recommendations when new data is uploaded
-        setRecommendations([]);
-        setRecommendationsError(null);
-      } else {
-        if (response.status === 401) {
-          handleLogout();
-          setUploadStatus('Session expired. Please login again.');
-        } else {
-          setUploadStatus(`Upload failed: ${result.detail || result.error || 'Please try again.'}`);
-        }
-        setUploadResult(null);
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      setUploadStatus('Upload failed. Please check if the backend server is running.');
-      setUploadResult(null);
-    } finally {
-      setIsUploading(false);
-    }
   };
 
   const handleGetRecommendations = async () => {
@@ -150,7 +92,7 @@ export default function Home() {
     setRecommendationsError(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/recommendations?top_n=10', {
+      const response = await fetch('http://localhost:8000/api/recommendations?top_n=5', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -206,15 +148,15 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Header with User Info */}
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Movie Recommendation Engine
+                Dashboard
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                Welcome back, {currentUser?.username}! Upload your movie ratings to get started
+                Welcome back, {currentUser?.username}! Manage your movie recommendations
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -230,83 +172,59 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Upload Component */}
-          <div className="mb-8">
-            <CSVUpload 
-              onFileUpload={handleFileUpload}
-              isLoading={isUploading}
-            />
-          </div>
-
-          {/* CSV Format Instructions */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-            <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
-              CSV Format Requirements
-            </h3>
-            <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-              <p>• Your CSV file should have columns: <strong>Name</strong> and <strong>Rating</strong></p>
-              <p>• <strong>Name</strong>: Movie title (e.g., "The Shawshank Redemption")</p>
-              <p>• <strong>Rating</strong>: Rating value (1-10 scale)</p>
-              <p>• Example: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">Name,Rating</code></p>
-            </div>
-          </div>
-
-          {/* Status Messages */}
-          {uploadStatus && (
-            <div className={`p-4 rounded-lg mb-4 ${
-              uploadStatus.includes('successfully') 
-                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' 
-                : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
-            }`}>
-              <p className={`text-sm ${
-                uploadStatus.includes('successfully') 
-                  ? 'text-green-600 dark:text-green-400' 
-                  : 'text-red-600 dark:text-red-400'
-              }`}>
-                {uploadStatus}
-              </p>
-            </div>
-          )}
-
-          {/* File Info */}
-          {uploadedFile && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Uploaded File Details
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Upload Ratings
               </h3>
-              <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <p><span className="font-medium">Name:</span> {uploadedFile.name}</p>
-                <p><span className="font-medium">Size:</span> {(uploadedFile.size / 1024).toFixed(2)} KB</p>
-                <p><span className="font-medium">Type:</span> {uploadedFile.type || 'text/csv'}</p>
-                <p><span className="font-medium">Last Modified:</span> {new Date(uploadedFile.lastModified).toLocaleString()}</p>
-                {uploadResult && (
-                  <>
-                    <p><span className="font-medium">Successful Uploads:</span> {uploadResult.successful_uploads || 0}</p>
-                    <p><span className="font-medium">Failed Uploads:</span> {uploadResult.failed_uploads || 0}</p>
-                    {uploadResult.failed_movies && uploadResult.failed_movies.length > 0 && (
-                      <div>
-                        <p className="font-medium">Failed Movies:</p>
-                        <ul className="list-disc list-inside ml-2 text-xs">
-                          {uploadResult.failed_movies.slice(0, 5).map((movie: string, index: number) => (
-                            <li key={index}>{movie}</li>
-                          ))}
-                          {uploadResult.failed_movies.length > 5 && (
-                            <li>... and {uploadResult.failed_movies.length - 5} more</li>
-                          )}
-                        </ul>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Upload your movie ratings to get personalized recommendations
+              </p>
+              <a
+                href="/upload"
+                className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-4 py-2 rounded transition-colors"
+              >
+                Upload CSV
+              </a>
             </div>
-          )}
 
-          {/* Recommendations Section */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                View Films
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Browse and get your personalized movie recommendations
+              </p>
+              <a
+                href="/films"
+                className="bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-2 rounded transition-colors"
+              >
+                Get Recommendations
+              </a>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                My Account
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Manage your profile and account settings
+              </p>
+              <a
+                href="/account"
+                className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-4 py-2 rounded transition-colors"
+              >
+                View Profile
+              </a>
+            </div>
+          </div>
+
+          {/* Recent Recommendations Preview */}
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Movie Recommendations
+                Recent Recommendations
               </h3>
               <button
                 onClick={handleGetRecommendations}
@@ -317,7 +235,7 @@ export default function Home() {
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
                 }`}
               >
-                {isLoadingRecommendations ? 'Loading...' : 'Get Recommendations'}
+                {isLoadingRecommendations ? 'Loading...' : 'Refresh'}
               </button>
             </div>
 
@@ -327,41 +245,39 @@ export default function Home() {
               </div>
             )}
 
-            {recommendations.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Based on your ratings, here are your personalized movie recommendations:
-                </p>
-                {recommendations.map((rec, index) => (
+            {recommendations.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {recommendations.slice(0, 6).map((rec, index) => (
                   <div key={rec.movie_id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <h4 className="font-medium text-gray-900 dark:text-white">
                           {index + 1}. {rec.title}
                         </h4>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1 space-y-1">
-                          <p>Rating: ⭐ {rec.vote_average.toFixed(1)} ({rec.vote_count} votes)</p>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          <p>Rating: ⭐ {rec.vote_average.toFixed(1)}</p>
                           <p>Score: {rec.weighted_score.toFixed(2)}</p>
-                          {rec.source_movies && (
-                            <p className="text-xs">Based on: {rec.source_movies}</p>
-                          )}
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                          #{index + 1}
-                        </span>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Upload some movie ratings to see your personalized recommendations.
+              </p>
             )}
 
-            {recommendations.length === 0 && !recommendationsError && !isLoadingRecommendations && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Upload some movie ratings and click "Get Recommendations" to see personalized suggestions.
-              </p>
+            {recommendations.length > 0 && (
+              <div className="mt-4 text-center">
+                <a
+                  href="/films"
+                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                >
+                  View all recommendations →
+                </a>
+              </div>
             )}
           </div>
         </div>

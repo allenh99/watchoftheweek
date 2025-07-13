@@ -15,7 +15,8 @@ export default function Navbar() {
       <div className="flex items-center space-x-6 text-gray-300">
         <Link href="/films" className="hover:text-white transition-colors">FILMS</Link>
         <Link href="/account" className="hover:text-white transition-colors">MY ACCOUNT</Link>
-        <Link href="/films" className="ml-6 bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-1 rounded transition-colors">+ GET RECOMMENDATIONS</Link>
+        <Link href="/upload" className="ml-6 bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-1 rounded transition-colors">UPLOAD</Link>
+
       </div>
     </nav>
   );
