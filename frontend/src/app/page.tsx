@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import AuthForm from '../components/AuthForm';
+import MovieCarousel from '../components/MovieCarousel';
 
 interface Recommendation {
   movie_id: number;
@@ -149,6 +150,7 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
+          <MovieCarousel />
           {/* Header with User Info */}
           <div className="flex justify-between items-center mb-8">
             <div>
