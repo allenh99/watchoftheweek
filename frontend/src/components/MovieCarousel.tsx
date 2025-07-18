@@ -4,11 +4,34 @@ import 'swiper/css/effect-coverflow';
 import { Autoplay, EffectCoverflow } from 'swiper/modules';
 
 const movies = [
-  { title: 'Inception', image: '/inception.jpg' },
-  { title: 'The Matrix', image: '/matrix.jpg' },
-  { title: 'Interstellar', image: '/interstellar.jpg' },
-  { title: 'The Godfather', image: '/godfather.jpg' },
-  { title: 'Pulp Fiction', image: '/pulpfiction.jpg' },
+  { 
+    title: 'Inception', 
+    poster_path: '/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
+  },
+  { 
+    title: 'The Matrix', 
+    poster_path: '/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg',
+  },
+  { 
+    title: 'Interstellar', 
+    poster_path: '/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
+  },
+  { 
+    title: 'The Godfather', 
+    poster_path: '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg',
+  },
+  { 
+    title: 'Pulp Fiction', 
+    poster_path: '/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg',
+  },
+  { 
+    title: 'Another Round', 
+    poster_path: '/aDcIt4NHURLKnAEu7gow51Yd00Q.jpg',
+  },
+  {
+    title: 'Midsommar', 
+    poster_path: '/vqPtSD5kJJTEFuJluj4C1J8wKKf.jpg',
+  }
 ];
 
 export default function MovieCarousel() {
@@ -19,7 +42,7 @@ export default function MovieCarousel() {
         effect="coverflow"
         grabCursor={true}
         centeredSlides={true}
-        slidesPerView={3}
+        slidesPerView={5}
         coverflowEffect={{
           rotate: 0,
           stretch: 0,
@@ -32,17 +55,22 @@ export default function MovieCarousel() {
           disableOnInteraction: false,
         }}
         loop={true}
-        className="w-[600px] h-[400px]"
+        className="w-[900px] h-[500px] max-w-5xl"
       >
         {movies.map((movie, idx) => (
-          <SwiperSlide key={idx}>
-            <img
-              src={movie.image}
-              alt={movie.title}
-              className="rounded-lg shadow-lg object-cover w-full h-80"
-            />
-            <div className="text-center mt-2 font-montserrat text-lg text-white drop-shadow">
-              {movie.title}
+          <SwiperSlide>
+            <div className="flex flex-col items-center">
+              <div className="w-64 h-96 relative overflow-hidden rounded-lg shadow-lg">
+                <img
+                  src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                  alt={movie.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback to a placeholder if image fails to load
+                    e.currentTarget.src = '/placeholder-movie.jpg';
+                  }}
+                />
+              </div>
             </div>
           </SwiperSlide>
         ))}
