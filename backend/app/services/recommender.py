@@ -21,6 +21,10 @@ def recommend(user_id: int, db: Session, top_n: int = 10):
     if not user_ratings:
         return pd.DataFrame()  # Return empty DataFrame if no ratings
     
+    # Get ALL movies the user has rated (for filtering)
+    all_user_rated_movies = db.query(Rating.movie_id).filter(Rating.user_id == user_id).all()
+    user_rated_movie_ids = [rating.movie_id for rating in all_user_rated_movies]
+    
     all_recommendations = []
     
     for rating in user_ratings:
@@ -33,12 +37,17 @@ def recommend(user_id: int, db: Session, top_n: int = 10):
         recommendations = get_movie_recommendations(movie.title, top_n=5)
         
         if recommendations is not None and not recommendations.empty:
-            # Add user's rating as a weight for this movie's recommendations
-            recommendations['source_movie'] = movie.title
-            recommendations['user_rating'] = rating.rating
-            recommendations['weighted_score'] = recommendations['vote_average'] * (rating.rating / 10.0)
+            # Filter out movies the user has already rated BEFORE adding to recommendations
+            recommendations = recommendations[~recommendations['id'].isin(user_rated_movie_ids)]
             
-            all_recommendations.append(recommendations)
+            if not recommendations.empty:
+                # Add user's rating as a weight for this movie's recommendations
+                recommendations['source_movie'] = movie.title
+                recommendations['user_rating'] = rating.rating
+                # Use user rating as the score since we don't have vote_average
+                recommendations['weighted_score'] = rating.rating
+                
+                all_recommendations.append(recommendations)
     
     if not all_recommendations:
         return pd.DataFrame()
@@ -63,9 +72,8 @@ def recommend(user_id: int, db: Session, top_n: int = 10):
     # Sort by weighted score (higher is better)
     final_recommendations = final_recommendations.sort_values('weighted_score', ascending=False)
     
-    # Remove movies the user has already rated
-    user_rated_movie_ids = [rating.movie_id for rating in user_ratings]
-    final_recommendations = final_recommendations[~final_recommendations['id'].isin(user_rated_movie_ids)]
+    print(f"User has rated {len(user_rated_movie_ids)} movies total")
+    print(f"Final recommendations: {len(final_recommendations)} (already filtered)")
     
     return final_recommendations.head(top_n)
 

@@ -115,8 +115,8 @@ def train_and_save_model(csv_file='app/data/top_rated_movies.csv', model_file='a
             lambda x: 1 if x == director else 0
         )
     
-    # Select features for KNN
-    feature_columns = ['vote_average', 'vote_count'] + [f'genre_{genre}' for genre in all_genres] + \
+    # Select features for KNN (pure content-based)
+    feature_columns = [f'genre_{genre}' for genre in all_genres] + \
                      [f'lang_{lang}' for lang in all_languages] + \
                      [f'cast_{cast_member.replace(" ", "_").replace(".", "_")}' for cast_member in all_cast] + \
                      [f'director_{director.replace(" ", "_").replace(".", "_")}' for director in all_directors]
