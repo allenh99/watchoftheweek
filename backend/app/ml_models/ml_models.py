@@ -26,10 +26,42 @@ def train_and_save_model(csv_file='app/data/top_rated_movies.csv', model_file='a
     
     # Load the data
     df = pd.read_csv(csv_file)
-    df.dropna(inplace=True)
+    
+    print(f"Initial dataset shape: {df.shape}")
+    print(f"Initial columns: {df.columns.tolist()}")
+    
+    # Check if required columns exist
+    required_columns = ['id', 'title', 'genre_ids', 'vote_average', 'vote_count', 'original_language']
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        print(f"Error: Missing required columns in dataset: {missing_columns}")
+        return None
+    
+    # Handle missing data for new features gracefully
+    if 'cast' not in df.columns:
+        df['cast'] = df.apply(lambda x: [], axis=1)
+    if 'director' not in df.columns:
+        df['director'] = None
+    
+    print(f"Before dropna: {len(df)} rows")
+    
+    # Check for NaN values in each column
+    for col in ['id', 'title', 'genre_ids', 'vote_average', 'vote_count']:
+        nan_count = df[col].isna().sum()
+        print(f"NaN values in {col}: {nan_count}")
+    
+    # Only drop rows with NaN in critical columns, but be more lenient
+    df.dropna(subset=['id', 'title', 'vote_average', 'vote_count'], inplace=True)
+    print(f"After dropna: {len(df)} rows")
+    
+    # Check if we have any data left
+    if len(df) == 0:
+        print("Error: No valid data remaining after cleaning. Please check your dataset.")
+        return None
     
     # Convert genre_ids from string to list and create genre features
-    df['genre_ids'] = df['genre_ids'].apply(eval)  # Convert string representation to list
+    # Handle empty genre_ids gracefully
+    df['genre_ids'] = df['genre_ids'].apply(lambda x: eval(x) if pd.notna(x) and x.strip() else [])
     
     # Create genre features (one-hot encoding for common genres)
     all_genres = set()
@@ -40,11 +72,62 @@ def train_and_save_model(csv_file='app/data/top_rated_movies.csv', model_file='a
     for genre in all_genres:
         df[f'genre_{genre}'] = df['genre_ids'].apply(lambda x: 1 if genre in x else 0)
     
+    # Handle original language (one-hot encoding for common languages)
+    all_languages = set()
+    for lang in df['original_language']:
+        if pd.notna(lang):
+            all_languages.add(lang)
+    
+    # Create binary columns for each language
+    for lang in all_languages:
+        df[f'lang_{lang}'] = df['original_language'].apply(lambda x: 1 if x == lang else 0)
+    
+    # Handle cast members (one-hot encoding for top cast)
+    all_cast = set()
+    for cast_list in df['cast']:
+        if isinstance(cast_list, list):
+            all_cast.update(cast_list[:3])  # Top 3 cast members
+        elif isinstance(cast_list, str):
+            # Handle string representation of cast list
+            try:
+                cast_eval = eval(cast_list)
+                if isinstance(cast_eval, list):
+                    all_cast.update(cast_eval[:3])
+            except:
+                pass
+    
+    # Create binary columns for each cast member
+    for cast_member in all_cast:
+        df[f'cast_{cast_member.replace(" ", "_").replace(".", "_")}'] = df['cast'].apply(
+            lambda x: 1 if (isinstance(x, list) and cast_member in x) or 
+                       (isinstance(x, str) and cast_member in eval(x) if x else False) else 0
+        )
+    
+    # Handle directors (one-hot encoding for directors)
+    all_directors = set()
+    for director in df['director']:
+        if pd.notna(director):
+            all_directors.add(director)
+    
+    # Create binary columns for each director
+    for director in all_directors:
+        df[f'director_{director.replace(" ", "_").replace(".", "_")}'] = df['director'].apply(
+            lambda x: 1 if x == director else 0
+        )
+    
     # Select features for KNN
-    feature_columns = ['vote_average', 'vote_count'] + [f'genre_{genre}' for genre in all_genres]
+    feature_columns = ['vote_average', 'vote_count'] + [f'genre_{genre}' for genre in all_genres] + \
+                     [f'lang_{lang}' for lang in all_languages] + \
+                     [f'cast_{cast_member.replace(" ", "_").replace(".", "_")}' for cast_member in all_cast] + \
+                     [f'director_{director.replace(" ", "_").replace(".", "_")}' for director in all_directors]
     
     # Prepare features
     X = df[feature_columns].values
+    
+    # Check if we have data to scale
+    if len(X) == 0:
+        print("Error: No data available for training. Please check your dataset.")
+        return None
     
     # Scale the features
     scaler = StandardScaler()
@@ -60,7 +143,10 @@ def train_and_save_model(csv_file='app/data/top_rated_movies.csv', model_file='a
         'scaler': scaler,
         'feature_columns': feature_columns,
         'movie_data': df,
-        'all_genres': list(all_genres)
+        'all_genres': list(all_genres),
+        'all_languages': list(all_languages),
+        'all_cast': list(all_cast),
+        'all_directors': list(all_directors)
     }
     
     # Create directory if it doesn't exist
@@ -141,11 +227,54 @@ def get_movie_recommendations(movie_name, top_n=10):
         for genre in all_genres:
             temp_df[f'genre_{genre}'] = temp_df['genre_ids'].apply(lambda x: 1 if genre in x else 0)
         
-        # Get features for the new movie
-        movie_features = temp_df[_feature_columns].values
+        # Add language features for the new movie
+        all_languages = set()
+        for lang in _movie_data['original_language']:
+            if pd.notna(lang):
+                all_languages.add(lang)
         
-        # Scale the features
-        movie_features_scaled = _scaler.transform(movie_features)
+        for lang in all_languages:
+            temp_df[f'lang_{lang}'] = temp_df['original_language'].apply(lambda x: 1 if x == lang else 0)
+        
+        # Add cast features for the new movie
+        all_cast = set()
+        for cast_list in _movie_data['cast']:
+            if isinstance(cast_list, list):
+                all_cast.update(cast_list[:3])
+        
+        for cast_member in all_cast:
+            temp_df[f'cast_{cast_member.replace(" ", "_").replace(".", "_")}'] = temp_df['cast'].apply(
+                lambda x: 1 if isinstance(x, list) and cast_member in x else 0
+            )
+        
+        # Add director features for the new movie
+        all_directors = set()
+        for director in _movie_data['director']:
+            if pd.notna(director):
+                all_directors.add(director)
+        
+        for director in all_directors:
+            temp_df[f'director_{director.replace(" ", "_").replace(".", "_")}'] = temp_df['director'].apply(
+                lambda x: 1 if x == director else 0
+            )
+        
+        # Get features for the new movie
+        try:
+            movie_features = temp_df[_feature_columns].values
+            
+            # Check if we have valid features
+            if len(movie_features) == 0 or movie_features.shape[1] == 0:
+                print(f"Error: No valid features found for '{movie_name}'")
+                return None
+            
+            # Scale the features
+            movie_features_scaled = _scaler.transform(movie_features)
+        except KeyError as e:
+            print(f"Error: Missing feature columns for '{movie_name}': {e}")
+            return None
+        except Exception as e:
+            print(f"Error processing features for '{movie_name}': {e}")
+            return None
         
         # Get recommendations
         distances, indices = _knn_model.kneighbors(movie_features_scaled)
@@ -158,10 +287,22 @@ def get_movie_recommendations(movie_name, top_n=10):
         movie_idx = movie_in_dataset.index[0]
         
         # Get the features for the input movie
-        movie_features = _movie_data.iloc[movie_idx][_feature_columns].values.reshape(1, -1)
-        
-        # Scale the features
-        movie_features_scaled = _scaler.transform(movie_features)
+        try:
+            movie_features = _movie_data.iloc[movie_idx][_feature_columns].values.reshape(1, -1)
+            
+            # Check if we have valid features
+            if len(movie_features) == 0 or movie_features.shape[1] == 0:
+                print(f"Error: No valid features found for '{movie_name}'")
+                return None
+            
+            # Scale the features
+            movie_features_scaled = _scaler.transform(movie_features)
+        except KeyError as e:
+            print(f"Error: Missing feature columns for '{movie_name}': {e}")
+            return None
+        except Exception as e:
+            print(f"Error processing features for '{movie_name}': {e}")
+            return None
         
         # Get the recommendations
         distances, indices = _knn_model.kneighbors(movie_features_scaled)

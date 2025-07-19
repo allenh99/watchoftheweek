@@ -31,7 +31,7 @@ export default function MovieCarousel() {
         {carouselMovies.map((movie, idx) => (
           <SwiperSlide>
             <div className="flex flex-col items-center">
-              <div className="w-48 h-72 relative overflow-hidden rounded-lg shadow-lg">
+              <div className="w-50 aspect-[2/3] relative overflow-hidden rounded-lg shadow-lg">
                 <img
                   src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                   alt={movie.title}

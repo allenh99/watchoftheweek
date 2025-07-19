@@ -13,13 +13,20 @@ def main():
         # Train and save the model
         model_data = train_and_save_model()
         
+        if model_data is None:
+            print("❌ Model training failed!")
+            return
+        
         print("Model training completed successfully!")
         print(f"Model saved with {len(model_data['movie_data'])} movies")
         print(f"Features used: {len(model_data['feature_columns'])}")
         print(f"Genres included: {len(model_data['all_genres'])}")
+        print(f"Languages included: {len(model_data.get('all_languages', []))}")
+        print(f"Cast members included: {len(model_data.get('all_cast', []))}")
+        print(f"Directors included: {len(model_data.get('all_directors', []))}")
         
         print("\nTesting model with poster_path...")
-        test_recommendations = get_movie_recommendations("The Matrix", top_n=3)
+        test_recommendations = get_movie_recommendations("The Shawshank Redemption", top_n=3)
         
         if test_recommendations is not None and not test_recommendations.empty:
             print("Model test successful")

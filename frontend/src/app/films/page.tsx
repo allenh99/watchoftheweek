@@ -105,7 +105,7 @@ export default function FilmsPage() {
                   className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
                 >
                   {movie.poster_path && (
-                    <div className="w-full h-48 overflow-hidden">
+                    <div className="w-full aspect-[2/3] overflow-hidden">
                       <img
                         src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                         alt={movie.title}
@@ -125,7 +125,7 @@ export default function FilmsPage() {
                       <p>Votes: {movie.vote_count.toLocaleString()}</p>
                       <p>Score: {movie.weighted_score.toFixed(2)}</p>
                       {movie.genre_ids && (
-                        <p>Genres: {movie.genre_ids}</p>
+                        <p>Genres: {movie.genre_ids }</p>
                       )}
                     </div>
                   </div>

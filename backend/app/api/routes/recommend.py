@@ -41,7 +41,8 @@ def recommend_movies(db: Session = Depends(get_db), current_user: User = Depends
                 "genre_ids": row['genre_ids'],
                 "weighted_score": float(row['weighted_score']),
                 "source_movies": row['source_movie'],
-                "user_rating": float(row['user_rating'])
+                "user_rating": float(row['user_rating']),
+                "poster_path": row.get('poster_path', None)
             })
         
         return {

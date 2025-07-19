@@ -254,7 +254,7 @@ export default function Home() {
                   <div key={rec.movie_id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                     <div className="flex items-start space-x-3">
                       {rec.poster_path && (
-                        <div className="flex-shrink-0 w-16 h-24 overflow-hidden rounded">
+                        <div className="flex-shrink-0 w-16 aspect-[2/3] overflow-hidden rounded">
                           <img
                             src={`https://image.tmdb.org/t/p/w200${rec.poster_path}`}
                             alt={rec.title}
