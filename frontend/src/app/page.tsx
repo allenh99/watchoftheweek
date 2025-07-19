@@ -13,6 +13,7 @@ interface Recommendation {
   weighted_score: number;
   source_movies: string;
   user_rating: number;
+  poster_path?: string;
 }
 
 interface User {
@@ -93,7 +94,7 @@ export default function Home() {
     setRecommendationsError(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/recommendations?top_n=5', {
+      const response = await fetch('http://localhost:8000/api/recommendations?top_n=12', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -148,17 +149,15 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6">
         <div className="max-w-6xl mx-auto">
-          <MovieCarousel />
-          {/* Header with User Info */}
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Dashboard
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                Welcome back, {currentUser?.username}! Manage your movie recommendations
+                Welcome back, {currentUser?.username}!
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -173,6 +172,8 @@ export default function Home() {
               </button>
             </div>
           </div>
+
+          <MovieCarousel />
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -251,7 +252,19 @@ export default function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {recommendations.slice(0, 6).map((rec, index) => (
                   <div key={rec.movie_id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                    <div className="flex justify-between items-start">
+                    <div className="flex items-start space-x-3">
+                      {rec.poster_path && (
+                        <div className="flex-shrink-0 w-16 h-24 overflow-hidden rounded">
+                          <img
+                            src={`https://image.tmdb.org/t/p/w200${rec.poster_path}`}
+                            alt={rec.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
                       <div className="flex-1">
                         <h4 className="font-medium text-gray-900 dark:text-white">
                           {index + 1}. {rec.title}

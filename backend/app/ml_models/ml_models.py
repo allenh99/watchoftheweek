@@ -179,7 +179,7 @@ def get_movie_recommendations(movie_name, top_n=10):
     
     # Get the recommended movies
     try:
-        recommended_movies = _movie_data.iloc[indices][['id', 'title', 'vote_average', 'vote_count', 'genre_ids']]
+        recommended_movies = _movie_data.iloc[indices][['id', 'title', 'vote_average', 'vote_count', 'genre_ids', 'poster_path']]
         return recommended_movies
     except Exception as e:
         print(f"Error getting recommended movies: {e}")

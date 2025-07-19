@@ -50,7 +50,7 @@ def recommend(user_id: int, db: Session, top_n: int = 10):
     combined_recommendations['genre_ids_str'] = combined_recommendations['genre_ids'].astype(str)
     
     # Remove duplicates and aggregate scores
-    final_recommendations = combined_recommendations.groupby(['id', 'title', 'vote_average', 'vote_count', 'genre_ids_str']).agg({
+    final_recommendations = combined_recommendations.groupby(['id', 'title', 'vote_average', 'vote_count', 'genre_ids_str', 'poster_path']).agg({
         'source_movie': lambda x: list(x),
         'user_rating': 'mean',
         'weighted_score': 'sum'

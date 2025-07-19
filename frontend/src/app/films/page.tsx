@@ -11,6 +11,7 @@ interface Recommendation {
   weighted_score: number;
   source_movies: string;
   user_rating: number;
+  poster_path?: string;
 }
 
 export default function FilmsPage() {
@@ -34,13 +35,13 @@ export default function FilmsPage() {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/recommendations?top_n=10', {
+      const response = await fetch('http://localhost:8000/api/recommendations?top_n=12', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
       const result = await response.json();
-
+      console.log(result);
       if (response.ok) {
         setRecommendations(result.recommendations || []);
       } else {
@@ -103,6 +104,18 @@ export default function FilmsPage() {
                   key={movie.movie_id}
                   className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
                 >
+                  {movie.poster_path && (
+                    <div className="w-full h-48 overflow-hidden">
+                      <img
+                        src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                        alt={movie.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                   <div className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                       {movie.title}
