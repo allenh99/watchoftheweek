@@ -27,9 +27,11 @@ def recommend(user_id: int, db: Session, top_n: int = 10):
     
     all_recommendations = []
     
+    print("Source movies for recommendations:")
     for rating in user_ratings:
-        # Get movie title from database
         movie = db.query(Movie).filter(Movie.id == rating.movie_id).first()
+        if movie:
+            print(f"{movie.title} (rating: {rating.rating})")
         if not movie:
             continue
             
@@ -64,6 +66,10 @@ def recommend(user_id: int, db: Session, top_n: int = 10):
         'user_rating': 'mean',
         'weighted_score': 'sum'
     }).reset_index()
+
+    # Debug print: show source_movie lists for each recommendation
+    print('DEBUG: source_movie lists for recommendations:')
+    print(final_recommendations[['title', 'source_movie']])
     
     # Convert genre_ids back to list
     final_recommendations['genre_ids'] = final_recommendations['genre_ids_str'].apply(eval)

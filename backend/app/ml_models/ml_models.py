@@ -254,14 +254,20 @@ def get_movie_recommendations(movie_name, top_n=10):
                 all_directors.add(director)
         
         for director in all_directors:
-            temp_df[f'director_{director.replace(" ", "_").replace(".", "_")}'] = temp_df['director'].apply(
+            temp_df[f'director_{director.replace(" ", "_").replace(".", "_")}' ] = temp_df['director'].apply(
                 lambda x: 1 if x == director else 0
             )
+        
+        # Ensure all required feature columns exist
+        for col in _feature_columns:
+            if col not in temp_df.columns:
+                temp_df[col] = 0
+        # Only keep the columns the model expects
+        temp_df = temp_df[_feature_columns]
         
         # Get features for the new movie
         try:
             movie_features = temp_df[_feature_columns].values
-            
             # Check if we have valid features
             if len(movie_features) == 0 or movie_features.shape[1] == 0:
                 print(f"Error: No valid features found for '{movie_name}'")
