@@ -4,22 +4,30 @@ from sqlalchemy import desc
 from app.ml_models.ml_models import get_movie_recommendations
 from app.services.moviedata import get_movie_data
 import pandas as pd
+import random
 
-def recommend(user_id: int, db: Session, top_n: int = 10):
+def recommend(user_id: int, db: Session, top_n: int = 10, sample_from_top_x: int = 100):
     """
-    Recommend movies to a user based on their top-rated movies
+    Recommend movies to a user based on a random sample of their top-rated movies
     Args:
         user_id: The user's ID
         db: Database session
-        top_n: Number of top-rated movies to consider
+        top_n: Number of recommendations to return
+        sample_from_top_x: Number of top-rated movies to sample from
     Returns:
         DataFrame: Recommended movies with scores
     """
-    # Get user's top-rated movies from database
-    user_ratings = db.query(Rating).filter(Rating.user_id == user_id).order_by(desc(Rating.rating)).limit(top_n).all()
+    # Get user's top X rated movies from database
+    user_ratings_all = db.query(Rating).filter(Rating.user_id == user_id).order_by(desc(Rating.rating)).limit(sample_from_top_x).all()
     
-    if not user_ratings:
+    if not user_ratings_all:
         return pd.DataFrame()  # Return empty DataFrame if no ratings
+    
+    # Randomly sample up to top_n movies from the top X
+    if len(user_ratings_all) > top_n:
+        user_ratings = random.sample(user_ratings_all, top_n)
+    else:
+        user_ratings = user_ratings_all
     
     # Get ALL movies the user has rated (for filtering)
     all_user_rated_movies = db.query(Rating.movie_id).filter(Rating.user_id == user_id).all()

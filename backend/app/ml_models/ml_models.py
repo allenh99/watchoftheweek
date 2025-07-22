@@ -259,9 +259,11 @@ def get_movie_recommendations(movie_name, top_n=10):
             )
         
         # Ensure all required feature columns exist
-        for col in _feature_columns:
-            if col not in temp_df.columns:
-                temp_df[col] = 0
+        missing_cols = [col for col in _feature_columns if col not in temp_df.columns]
+        if missing_cols:
+            # Create a DataFrame with the same index and all missing columns set to 0
+            missing_df = pd.DataFrame(0, index=temp_df.index, columns=missing_cols)
+            temp_df = pd.concat([temp_df, missing_df], axis=1)
         # Only keep the columns the model expects
         temp_df = temp_df[_feature_columns]
         
