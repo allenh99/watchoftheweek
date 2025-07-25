@@ -98,14 +98,14 @@ export default function FilmsPage() {
 
           {/* Recommendations Grid */}
           {recommendations.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {recommendations.map((movie, index) => (
                 <div
                   key={movie.movie_id}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                  className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow flex flex-col items-center p-2"
                 >
                   {movie.poster_path && (
-                    <div className="w-full aspect-[2/3] overflow-hidden">
+                    <div className="w-24 aspect-[2/3] overflow-hidden mb-2">
                       <img
                         src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                         alt={movie.title}
@@ -116,11 +116,11 @@ export default function FilmsPage() {
                       />
                     </div>
                   )}
-                  <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  <div className="w-full">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1 truncate">
                       {movie.title}
                     </h3>
-                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                    <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
                       <p>Rating: ⭐ {movie.vote_average.toFixed(1)}</p>
                       <p>Votes: {movie.vote_count.toLocaleString()}</p>
                       <p>Score: {movie.weighted_score.toFixed(2)}</p>
