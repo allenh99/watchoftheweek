@@ -168,6 +168,89 @@ def get_movie_id_by_name(movie_name):
 # print("- Director (one-hot encoded)")
 # print("- All previous features (genres, ratings, etc.)")
 
+def convert_films_txt_to_csv():
+    """
+    Convert films.txt to CSV format using existing TMDB setup
+    """
+    import csv
+    import os
+    
+    # Read films.txt
+    films_file = os.path.join(data_dir, 'films.txt')
+    output_file = os.path.join(data_dir, 'films.csv')
+    
+    if not os.path.exists(films_file):
+        print(f"Error: {films_file} not found")
+        return
+    
+    # Read movie titles
+    with open(films_file, 'r', encoding='utf-8') as f:
+        movie_titles = [line.strip() for line in f if line.strip()]
+    
+    print(f"Found {len(movie_titles)} movies in {films_file}")
+    
+    # CSV headers matching the existing structure
+    headers = [
+        'id', 'title', 'genre_ids', 'overview', 'release_date', 
+        'vote_average', 'vote_count', 'poster_path', 'original_language',
+        'cast', 'director'
+    ]
+    
+    # Prepare CSV data
+    csv_data = []
+    
+    for i, title in enumerate(movie_titles, 1):
+        print(f"Processing {i}/{len(movie_titles)}: {title}")
+        
+        try:
+            # Search for movie using existing method
+            movie_id = get_movie_id_by_name(title)
+            
+            if movie_id:
+                # Get detailed movie data using existing method
+                movie_data = get_movie_data(movie_id)
+                
+                if movie_data:
+                    # Convert cast list to string format
+                    cast_str = str(movie_data['cast']) if movie_data['cast'] else '[]'
+                    
+                    # Prepare row data
+                    row = {
+                        'id': movie_data['id'],
+                        'title': movie_data['title'],
+                        'genre_ids': str(movie_data['genre_ids']),
+                        'overview': movie_data['overview'],
+                        'release_date': movie_data['release_date'],
+                        'vote_average': movie_data['vote_average'],
+                        'vote_count': movie_data['vote_count'],
+                        'poster_path': movie_data['poster_path'],
+                        'original_language': movie_data['original_language'],
+                        'cast': cast_str,
+                        'director': movie_data['director']
+                    }
+                    
+                    csv_data.append(row)
+                    print(f"  ✓ Found: {movie_data['title']} ({movie_data['release_date']})")
+                else:
+                    print(f"  ✗ Could not get details for: {title}")
+            else:
+                print(f"  ✗ Not found: {title}")
+                
+        except Exception as e:
+            print(f"  ✗ Error processing {title}: {e}")
+        
+        # Rate limiting - be nice to the API
+        import time
+        time.sleep(0.25)
+    
+    # Write CSV file
+    with open(output_file, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=headers)
+        writer.writeheader()
+        writer.writerows(csv_data)
+    
+    print(f"\nConversion complete! Created {output_file} with {len(csv_data)} movies")
+
 #TESTING METHODS CODE
 #print(get_movie_id_by_name("The Dark Knight"))
 # print(get_movie_data(155))

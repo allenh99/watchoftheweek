@@ -10,8 +10,8 @@ def main():
     print("Training recommendation model...")
     
     try:
-        # Train and save the model
-        model_data = train_and_save_model()
+        # Train and save the model using films.csv instead of top_rated_movies.csv
+        model_data = train_and_save_model(csv_file='app/data/films.csv')
         
         if model_data is None:
             print("❌ Model training failed!")
