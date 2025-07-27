@@ -14,6 +14,7 @@ interface Recommendation {
   source_movies: string;
   user_rating: number;
   poster_path?: string;
+  cluster_id?: number;
 }
 
 interface User {
@@ -249,34 +250,97 @@ export default function Home() {
             )}
 
             {recommendations.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {recommendations.slice(0, 6).map((rec, index) => (
-                  <div key={rec.movie_id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                    <div className="flex items-start space-x-3">
-                      {rec.poster_path && (
-                        <div className="flex-shrink-0 w-16 aspect-[2/3] overflow-hidden rounded">
-                          <img
-                            src={`https://image.tmdb.org/t/p/w200${rec.poster_path}`}
-                            alt={rec.title}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900 dark:text-white">
+              <div className="space-y-4">
+                {/* Source Movies Summary */}
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                    Based on your ratings of:
+                  </h4>
+                  <div className="flex flex-wrap gap-1">
+                    {Array.from(new Set(recommendations.map(r => 
+                      Array.isArray(r.source_movies) ? r.source_movies : [r.source_movies]
+                    ).flat())).slice(0, 5).map((sourceMovie, index) => (
+                      <span
+                        key={index}
+                        className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full text-xs font-medium"
+                      >
+                        {sourceMovie}
+                      </span>
+                    ))}
+                    {Array.from(new Set(recommendations.map(r => 
+                      Array.isArray(r.source_movies) ? r.source_movies : [r.source_movies]
+                    ).flat())).length > 5 && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        +{Array.from(new Set(recommendations.map(r => 
+                          Array.isArray(r.source_movies) ? r.source_movies : [r.source_movies]
+                        ).flat())).length - 5} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Movie Recommendations */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {recommendations.slice(0, 6).map((rec, index) => (
+                    <div key={rec.movie_id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                      <div className="flex items-start space-x-3">
+                        {rec.poster_path && (
+                          <div className="flex-shrink-0 w-16 aspect-[2/3] overflow-hidden rounded">
+                            <img
+                              src={`https://image.tmdb.org/t/p/w200${rec.poster_path}`}
+                              alt={rec.title}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                                                  <h4 className="font-medium text-gray-900 dark:text-white">
                           {index + 1}. {rec.title}
+                          {rec.cluster_id && (
+                            <span className="ml-2 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-1.5 py-0.5 rounded text-xs font-medium">
+                              C{rec.cluster_id}
+                            </span>
+                          )}
                         </h4>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          <p>Rating: ⭐ {rec.vote_average.toFixed(1)}</p>
-                          <p>Score: {rec.weighted_score.toFixed(2)}</p>
+                          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            <p>Rating: ⭐ {rec.vote_average.toFixed(1)}</p>
+                            <p>Score: {rec.weighted_score.toFixed(2)}</p>
+                            {/* Source Movies for this recommendation */}
+                            <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                                Based on:
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {Array.isArray(rec.source_movies) ? 
+                                  (rec.source_movies as string[]).slice(0, 2).map((source: string, idx: number) => (
+                                    <span
+                                      key={idx}
+                                      className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-1 py-0.5 rounded text-xs"
+                                    >
+                                      {source}
+                                    </span>
+                                  ))
+                                  : 
+                                  <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-1 py-0.5 rounded text-xs">
+                                    {rec.source_movies}
+                                  </span>
+                                }
+                                {Array.isArray(rec.source_movies) && (rec.source_movies as string[]).length > 2 && (
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    +{(rec.source_movies as string[]).length - 2} more
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             ) : (
               <p className="text-sm text-gray-500 dark:text-gray-400">

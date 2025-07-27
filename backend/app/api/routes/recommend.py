@@ -18,10 +18,19 @@ def get_db():
 
 #takes movies that the user has rated and passes them through recommendation engine
 @router.get("/recommendations")
-def recommend_movies(db: Session = Depends(get_db), current_user: User = Depends(get_current_user), top_n: int = 10):
+def recommend_movies(db: Session = Depends(get_db), current_user: User = Depends(get_current_user), top_n: int = 12, use_clustering: bool = True):
+    """
+    Get movie recommendations for the current user
+    Args:
+        top_n: Number of recommendations to return (default 12)
+        use_clustering: Whether to use clustering for diverse recommendations (default True)
+    """
     try:
         # Get recommendations using the recommender service
-        recommendations_df = recommender.recommend(current_user.id, db, top_n=top_n)
+        if use_clustering:
+            recommendations_df = recommender.recommend_clustered(current_user.id, db, top_n=top_n, n_clusters=top_n)
+        else:
+            recommendations_df = recommender.recommend(current_user.id, db, top_n=top_n)
         
         if recommendations_df is None or recommendations_df.empty:
             return {
@@ -33,6 +42,13 @@ def recommend_movies(db: Session = Depends(get_db), current_user: User = Depends
         # Convert DataFrame to list of dictionaries
         recommendations_list = []
         for idx, row in recommendations_df.iterrows():
+            # Handle source_movies - it can be a list or a single string
+            source_movies = row['source_movie']
+            if isinstance(source_movies, list):
+                source_movies_list = source_movies
+            else:
+                source_movies_list = [source_movies] if source_movies else []
+            
             recommendations_list.append({
                 "movie_id": int(row['id']),
                 "title": row['title'],
@@ -40,9 +56,10 @@ def recommend_movies(db: Session = Depends(get_db), current_user: User = Depends
                 "vote_count": int(row['vote_count']),
                 "genre_ids": row['genre_ids'],
                 "weighted_score": float(row['weighted_score']),
-                "source_movies": row['source_movie'],
+                "source_movies": source_movies_list,
                 "user_rating": float(row['user_rating']),
-                "poster_path": row.get('poster_path', None)
+                "poster_path": row.get('poster_path', None),
+                "cluster_id": int(row.get('cluster_id', 0))
             })
         
         return {
