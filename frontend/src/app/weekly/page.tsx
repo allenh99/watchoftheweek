@@ -16,6 +16,12 @@ interface WeeklyRecommendation {
   generated_date?: string;
 }
 
+interface User {
+  id: number;
+  username: string;
+  email: string;
+}
+
 interface WeeklyStatus {
   has_recommendation: boolean;
   days_until_new: number;
@@ -28,15 +34,49 @@ export default function WeeklyRecommendation() {
   const [status, setStatus] = useState<WeeklyStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  const fetchCurrentUser = async (authToken: string) => {
+    try {
+      const response = await fetch('http://localhost:8000/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+
+      if (response.ok) {
+        const user = await response.json();
+        setCurrentUser(user);
+      } else {
+        // Token is invalid, clear it
+        handleLogout();
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      handleLogout();
+    }
+  };
+
+  const handleLogout = () => {
+    setToken(null);
+    setCurrentUser(null);
+    localStorage.removeItem('authToken');
+    // Redirect to home page
+    window.location.href = '/';
+  };
 
   const fetchWeeklyRecommendation = async (forceNew: boolean = false) => {
+    if (!currentUser) {
+      setError('Please login first');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       
-      // For now, use user ID 1 as a test - in a real app you'd get this from auth
-      const userId = 1;
-      const response = await fetch(`http://localhost:8000/api/weekly-recommendation/${userId}?force_new=${forceNew}`, {
+      const response = await fetch(`http://localhost:8000/api/weekly-recommendation/${currentUser.id}?force_new=${forceNew}`, {
         credentials: 'include'
       });
       console.log(response);
@@ -54,10 +94,12 @@ export default function WeeklyRecommendation() {
   };
 
   const fetchStatus = async () => {
+    if (!currentUser) {
+      return;
+    }
+
     try {
-      // For now, use user ID 1 as a test - in a real app you'd get this from auth
-      const userId = 1;
-      const response = await fetch(`http://localhost:8000/api/weekly-recommendation-status/${userId}`, {
+      const response = await fetch(`http://localhost:8000/api/weekly-recommendation-status/${currentUser.id}`, {
         credentials: 'include'
       });
       
@@ -71,9 +113,22 @@ export default function WeeklyRecommendation() {
   };
 
   useEffect(() => {
-    fetchWeeklyRecommendation();
-    fetchStatus();
+    const savedToken = localStorage.getItem('authToken');
+    if (savedToken) {
+      setToken(savedToken);
+      fetchCurrentUser(savedToken);
+    } else {
+      setLoading(false);
+      setError('Please login first');
+    }
   }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchWeeklyRecommendation();
+      fetchStatus();
+    }
+  }, [currentUser]);
 
   const handleGenerateNew = () => {
     fetchWeeklyRecommendation(true);
@@ -96,6 +151,25 @@ export default function WeeklyRecommendation() {
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-400">Loading your weekly recommendation...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && error === 'Please login first') {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 text-center">
+            <h2 className="text-xl font-semibold text-blue-800 dark:text-blue-200 mb-2">Authentication Required</h2>
+            <p className="text-blue-600 dark:text-blue-300 mb-4">Please login to view your weekly recommendation</p>
+            <button
+              onClick={() => window.location.href = '/'}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition-colors"
+            >
+              Go to Login
+            </button>
           </div>
         </div>
       </div>
@@ -211,20 +285,7 @@ export default function WeeklyRecommendation() {
                     </p>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    {recommendation.vote_average && (
-                      <div>
-                        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Rating</span>
-                        <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                          ⭐ {recommendation.vote_average.toFixed(1)}
-                          {recommendation.vote_count && (
-                            <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
-                              ({recommendation.vote_count.toLocaleString()} votes)
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    )}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     
                     {recommendation.source_movie && (
                       <div>
