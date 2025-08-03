@@ -4,6 +4,7 @@ from sqlalchemy.sql import func
 from app.database import SessionLocal
 from app.models.models import Movie, Rating, User
 from app.services import recommender
+from app.services import weekly_recommender
 from app.auth import get_current_user
 import pandas as pd
 
@@ -100,3 +101,48 @@ def get_user_top_movies(user_id: int, db: Session = Depends(get_db), top_n: int 
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error fetching user top movies: {str(e)}")
+
+@router.get("/weekly-recommendation/{user_id}")
+def get_weekly_recommendation(user_id: int, db: Session = Depends(get_db), force_new: bool = False):
+    """
+    Get the user's weekly movie recommendation
+    Args:
+        user_id: The user's ID
+        force_new: Force generation of a new recommendation (ignores weekly cycle)
+    """
+    try:
+        recommendation = weekly_recommender.get_weekly_recommendation(user_id, db, force_new=force_new)
+        
+        if recommendation is None:
+            return {
+                "user_id": user_id,
+                "message": "No weekly recommendation available. User may not have rated enough movies.",
+                "recommendation": None
+            }
+        
+        return {
+            "user_id": user_id,
+            "recommendation": recommendation
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting weekly recommendation: {str(e)}")
+
+@router.get("/weekly-recommendation-status/{user_id}")
+def get_weekly_recommendation_status(user_id: int, db: Session = Depends(get_db)):
+    """
+    Get the status of the user's weekly recommendation
+    """
+    try:
+        status = weekly_recommender.get_weekly_recommendation_status(user_id, db)
+        
+        if status is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return {
+            "user_id": user_id,
+            "status": status
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting weekly recommendation status: {str(e)}")
