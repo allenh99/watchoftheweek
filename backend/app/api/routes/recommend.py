@@ -3,8 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from app.database import SessionLocal
 from app.models.models import Movie, Rating, User
-from app.services import recommender
-from app.services import weekly_recommender
+from app.services import recommender, weekly_recommender, moviedata
 from app.auth import get_current_user
 import pandas as pd
 
@@ -19,11 +18,11 @@ def get_db():
 
 #takes movies that the user has rated and passes them through recommendation engine
 @router.get("/recommendations")
-def recommend_movies(db: Session = Depends(get_db), current_user: User = Depends(get_current_user), top_n: int = 12, use_clustering: bool = True):
+def recommend_movies(db: Session = Depends(get_db), current_user: User = Depends(get_current_user), top_n: int = 6, use_clustering: bool = True):
     """
     Get movie recommendations for the current user
     Args:
-        top_n: Number of recommendations to return (default 12)
+        top_n: Number of recommendations to return (default 6, reduced from 12)
         use_clustering: Whether to use clustering for diverse recommendations (default True)
     """
     try:
@@ -122,7 +121,8 @@ def get_weekly_recommendation(user_id: int, db: Session = Depends(get_db), force
         
         return {
             "user_id": user_id,
-            "recommendation": recommendation
+            "recommendation": recommendation,
+            "streaming_data": moviedata.get_movie_streaming_data(recommendation['movie_id'])
         }
         
     except Exception as e:

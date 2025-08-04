@@ -23,7 +23,7 @@ def recommend(user_id: int, db: Session, top_n: int = 10, sample_from_top_x: int
     user_ratings_all = db.query(Rating).filter(Rating.user_id == user_id).order_by(desc(Rating.rating)).limit(sample_from_top_x).all()
     
     if not user_ratings_all:
-        return pd.DataFrame()  # Return empty DataFrame if no ratings
+        return pd.DataFrame()
     
 
     if len(user_ratings_all) > top_n:
@@ -71,14 +71,12 @@ def recommend(user_id: int, db: Session, top_n: int = 10, sample_from_top_x: int
         'weighted_score': 'sum'
     }).reset_index()
 
-    # Debug print: show source_movie lists for each recommendation
     print('DEBUG: source_movie lists for recommendations:')
     print(final_recommendations[['title', 'source_movie']])
     
     final_recommendations['genre_ids'] = final_recommendations['genre_ids_str'].apply(eval)
     final_recommendations = final_recommendations.drop('genre_ids_str', axis=1)
     
-    # Sort by weighted score (higher is better)
     final_recommendations = final_recommendations.sort_values('weighted_score', ascending=False)
     
     print(f"User has rated {len(user_rated_movie_ids)} movies total")
@@ -86,13 +84,13 @@ def recommend(user_id: int, db: Session, top_n: int = 10, sample_from_top_x: int
     
     return final_recommendations.head(top_n)
 
-def cluster_user_movies(user_id: int, db: Session, n_clusters: int = 12):
+def cluster_user_movies(user_id: int, db: Session, n_clusters: int = 6):
     """
     Cluster user's rated movies into similar groups and select one representative from each cluster
     Args:
         user_id: The user's ID
         db: Database session
-        n_clusters: Number of clusters to create (default 12)
+        n_clusters: Number of clusters to create (default 6)
     Returns:
         List: One representative movie from each cluster
     """
@@ -104,25 +102,29 @@ def cluster_user_movies(user_id: int, db: Session, n_clusters: int = 12):
         print(f"User has only {len(user_ratings)} rated movies, cannot create {n_clusters} clusters")
         return [rating for rating, movie in user_ratings]
     
-    from app.ml_models.ml_models import load_model
-    model_data = load_model()
-    
-    if model_data is None:
-        print("Could not load model data for clustering")
-        return [rating for rating, movie in user_ratings[:n_clusters]]
-    
-    movie_data = model_data['movie_data']
-    feature_columns = model_data['feature_columns']
-    
     movie_features = []
     movie_ratings = []
     
     for rating, movie in user_ratings:
-        movie_row = movie_data[movie_data['title'].str.lower() == movie.title.lower()]
-        if not movie_row.empty:
-            features = movie_row[feature_columns].iloc[0].values
-            movie_features.append(features)
-            movie_ratings.append(rating)
+        features = []
+        
+        features.append(rating.rating / 5.0)
+        
+        if hasattr(movie, 'year') and movie.year:
+            try:
+                year_normalized = (movie.year - 1900) / (2024 - 1900)
+                features.append(year_normalized)
+            except:
+                features.append(0.5)
+        else:
+            features.append(0.5)
+        
+        features.append(1.0 if hasattr(movie, 'genre') and movie.genre else 0.0)
+        
+        features.append(1.0 if hasattr(movie, 'director') and movie.director else 0.0)
+        
+        movie_features.append(features)
+        movie_ratings.append(rating)
     
     if len(movie_features) < n_clusters:
         print(f"Only {len(movie_features)} movies have features, cannot create {n_clusters} clusters")
@@ -130,10 +132,15 @@ def cluster_user_movies(user_id: int, db: Session, n_clusters: int = 12):
     
     X = np.array(movie_features)
     
+    effective_clusters = min(n_clusters, len(X))
+    if effective_clusters < 2:
+        print(f"Not enough data for clustering, returning top {n_clusters} movies")
+        return [rating for rating in movie_ratings[:n_clusters]]
+    
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     
-    kmeans = KMeans(n_clusters=min(n_clusters, len(X_scaled)), random_state=42)
+    kmeans = KMeans(n_clusters=effective_clusters, random_state=42)
     cluster_labels = kmeans.fit_predict(X_scaled)
     
     selected_ratings = []
@@ -159,7 +166,7 @@ def cluster_user_movies(user_id: int, db: Session, n_clusters: int = 12):
     
     return selected_ratings
 
-def recommend_clustered(user_id: int, db: Session, top_n: int = 12, n_clusters: int = 12):
+def recommend_clustered(user_id: int, db: Session, top_n: int = 6, n_clusters: int = 6):
     """
     Recommend movies using clustered source movies - one recommendation per cluster
     Each recommendation comes from a different cluster of similar movies
@@ -167,7 +174,7 @@ def recommend_clustered(user_id: int, db: Session, top_n: int = 12, n_clusters: 
         user_id: The user's ID
         db: Database session
         top_n: Number of recommendations to return (should equal n_clusters)
-        n_clusters: Number of clusters to create
+        n_clusters: Number of clusters to create (default 6, reduced from 12)
     Returns:
         DataFrame: Recommended movies with scores
     """

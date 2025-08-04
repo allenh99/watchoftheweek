@@ -2,6 +2,20 @@
 
 import { useState, useEffect } from 'react';
 
+interface StreamingOption {
+  provider_name: string;
+  provider_id: number;
+  logo_path: string;
+}
+
+interface StreamingData {
+  flatrate: [string, number, string][];
+  free: [string, number, string][];
+  ads: [string, number, string][];
+  buy: [string, number, string][];
+  rent: [string, number, string][];
+}
+
 interface WeeklyRecommendation {
   movie_id: number;
   title: string;
@@ -14,6 +28,7 @@ interface WeeklyRecommendation {
   user_rating?: number;
   is_new?: boolean;
   generated_date?: string;
+  streaming_data?: StreamingData;
 }
 
 interface User {
@@ -28,6 +43,62 @@ interface WeeklyStatus {
   can_generate_new: boolean;
   last_generated?: string;
 }
+
+// Streaming Options Component
+const StreamingOptions = ({ streamingData }: { streamingData: StreamingData }) => {
+  // Combine all streaming options into one array
+  const allProviders = [
+    ...(streamingData.free || []),
+    ...(streamingData.flatrate || []),
+    ...(streamingData.ads || []),
+    ...(streamingData.rent || []),
+    ...(streamingData.buy || [])
+  ];
+  
+  // Remove duplicates based on provider name
+  const uniqueProviders = allProviders.filter((provider, index, self) => 
+    index === self.findIndex(p => p[0] === provider[0])
+  );
+  
+  if (uniqueProviders.length === 0) {
+    return (
+      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+        <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+          Where to Watch
+        </h4>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Streaming information not available
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+      <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+        Where to Watch
+      </h4>
+      
+      <div className="flex flex-wrap gap-2">
+        {uniqueProviders.map((provider, index) => (
+          <div key={index} className="flex items-center space-x-2 bg-white dark:bg-gray-600 rounded-lg px-3 py-2">
+            {provider[2] && (
+              <img
+                src={`https://image.tmdb.org/t/p/w45${provider[2]}`}
+                alt={provider[0]}
+                className="w-6 h-6 object-contain"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+            )}
+            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+              {provider[0]}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export default function WeeklyRecommendation() {
   const [recommendation, setRecommendation] = useState<WeeklyRecommendation | null>(null);
@@ -85,7 +156,12 @@ export default function WeeklyRecommendation() {
       }
       
       const data = await response.json();
-      setRecommendation(data.recommendation);
+      // Combine recommendation with streaming data
+      const recommendationWithStreaming = {
+        ...data.recommendation,
+        streaming_data: data.streaming_data
+      };
+      setRecommendation(recommendationWithStreaming);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -303,8 +379,15 @@ export default function WeeklyRecommendation() {
                   </div>
 
                   {recommendation.generated_date && (
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-6">
                       Generated on {formatDate(recommendation.generated_date)}
+                    </div>
+                  )}
+
+                  {/* Streaming Options */}
+                  {recommendation.streaming_data && (
+                    <div className="mt-6">
+                      <StreamingOptions streamingData={recommendation.streaming_data} />
                     </div>
                   )}
                 </div>

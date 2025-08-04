@@ -4,7 +4,15 @@ from sqlalchemy import desc
 from app.ml_models.ml_models import get_movie_recommendations
 from app.services.recommender import cluster_user_movies
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+def ensure_timezone_aware(dt):
+    """Ensure a datetime is timezone-aware, assuming UTC if it's naive"""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
 
 def get_weekly_recommendation(user_id: int, db: Session, force_new: bool = False):
     """
@@ -32,8 +40,9 @@ def get_weekly_recommendation(user_id: int, db: Session, force_new: bool = False
         need_new_recommendation = True
     else:
         # Check if a week has passed since the last recommendation
-        week_ago = datetime.utcnow() - timedelta(days=7)
-        if user.weekly_recommendation_date < week_ago:
+        week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+        user_date = ensure_timezone_aware(user.weekly_recommendation_date)
+        if user_date and user_date < week_ago:
             need_new_recommendation = True
     
     if need_new_recommendation:
@@ -43,7 +52,7 @@ def get_weekly_recommendation(user_id: int, db: Session, force_new: bool = False
         if recommendation:
             # Update user with new recommendation
             user.weekly_recommendation_id = recommendation['movie_id']
-            user.weekly_recommendation_date = datetime.utcnow()
+            user.weekly_recommendation_date = datetime.now(timezone.utc)
             db.commit()
             
             print(f"Generated new weekly recommendation for user {user_id}: {recommendation['title']}")
@@ -69,7 +78,7 @@ def get_weekly_recommendation(user_id: int, db: Session, force_new: bool = False
                 'vote_count': tmdb_data.get('vote_count') if tmdb_data else None,
                 'overview': tmdb_data.get('overview') if tmdb_data else None,
                 'is_new': False,
-                'generated_date': user.weekly_recommendation_date.isoformat() if user.weekly_recommendation_date else None
+                'generated_date': ensure_timezone_aware(user.weekly_recommendation_date).isoformat() if user.weekly_recommendation_date else None
             }
             
             print(f"Returning existing weekly recommendation for user {user_id}: {recommendation['title']}")
@@ -87,18 +96,15 @@ def generate_weekly_recommendation(user_id: int, db: Session):
     Returns:
         dict: New weekly recommendation
     """
-    # Get clustered source movies (use 1 cluster for weekly recommendation)
     source_ratings = cluster_user_movies(user_id, db, n_clusters=1)
     
     if not source_ratings:
         return None
     
-    # Get ALL movies the user has rated (for filtering)
     all_user_rated_movies = db.query(Rating.movie_id).filter(Rating.user_id == user_id).all()
     user_rated_movie_ids = [rating.movie_id for rating in all_user_rated_movies]
     
-    # Get recommendations from the best source movie
-    best_rating = source_ratings[0]  # Only one cluster
+    best_rating = source_ratings[0]
     movie = db.query(Movie).filter(Movie.id == best_rating.movie_id).first()
     
     if not movie:
@@ -106,15 +112,12 @@ def generate_weekly_recommendation(user_id: int, db: Session):
     
     print(f"Generating weekly recommendation from: {movie.title} (rating: {best_rating.rating})")
     
-    # Get recommendations for this movie
     recommendations = get_movie_recommendations(movie.title, top_n=50)
     
     if recommendations is not None and not recommendations.empty:
-        # Filter out movies the user has already rated
         recommendations = recommendations[~recommendations['id'].isin(user_rated_movie_ids)]
         
         if not recommendations.empty:
-            # Select the best recommendation
             best_recommendation = recommendations.iloc[0]
             
             recommendation = {
@@ -128,7 +131,7 @@ def generate_weekly_recommendation(user_id: int, db: Session):
                 'source_movie': movie.title,
                 'user_rating': best_rating.rating,
                 'is_new': True,
-                'generated_date': datetime.utcnow().isoformat()
+                'generated_date': datetime.now(timezone.utc).isoformat()
             }
             
             print(f"Selected weekly recommendation: {recommendation['title']}")
@@ -156,18 +159,17 @@ def get_weekly_recommendation_status(user_id: int, db: Session):
             'can_generate_new': True
         }
     
-    # Calculate days until new recommendation
-    week_ago = datetime.utcnow() - timedelta(days=7)
+    week_ago = datetime.now(timezone.utc) - timedelta(days=7)
     days_until_new = 0
     
-    if user.weekly_recommendation_date > week_ago:
-        # Calculate remaining days
-        time_until_new = user.weekly_recommendation_date + timedelta(days=7) - datetime.utcnow()
+    user_date = ensure_timezone_aware(user.weekly_recommendation_date)
+    if user_date and user_date > week_ago:
+        time_until_new = user_date + timedelta(days=7) - datetime.now(timezone.utc)
         days_until_new = max(0, time_until_new.days)
     
     return {
         'has_recommendation': True,
         'days_until_new': days_until_new,
         'can_generate_new': days_until_new == 0,
-        'last_generated': user.weekly_recommendation_date.isoformat() if user.weekly_recommendation_date else None
+        'last_generated': ensure_timezone_aware(user.weekly_recommendation_date).isoformat() if user.weekly_recommendation_date else None
     } 

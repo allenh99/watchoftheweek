@@ -9,7 +9,6 @@ class User(Base):
     username = Column(String, unique=True, nullable=False)
     email = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    # Weekly recommendation fields
     weekly_recommendation_id = Column(Integer, nullable=True)
     weekly_recommendation_date = Column(DateTime, nullable=True)
     ratings = relationship("Rating", back_populates="user")

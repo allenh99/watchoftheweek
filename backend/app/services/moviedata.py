@@ -254,3 +254,37 @@ def convert_films_txt_to_csv():
 #TESTING METHODS CODE
 #print(get_movie_id_by_name("The Dark Knight"))
 # print(get_movie_data(155))
+
+def get_movie_streaming_data(movie_id):
+    country = "US"
+    streamingdata = {
+        'flatrate': [],
+        'free': [],
+        'ads': [],
+        'buy': [],
+        'rent': []
+    }
+    try:
+        watch_providers = tmdb.watch_providers().movie(country)
+        #print(watch_providers)
+        movies = tmdb.movie(movie_id).watch_providers().results[country]
+        if movies.flatrate:
+            for i in movies.flatrate:
+                streamingdata['flatrate'].append((i.provider_name, i.provider_id, i.logo_path))
+        if movies.free:
+            for i in movies.free:
+                streamingdata['free'].append((i.provider_name, i.provider_id, i.logo_path))
+        if movies.ads:
+            for i in movies.ads:
+                streamingdata['ads'].append((i.provider_name, i.provider_id, i.logo_path))
+        if movies.buy:
+            for i in movies.buy:
+                streamingdata['buy'].append((i.provider_name, i.provider_id, i.logo_path))
+        if movies.rent:
+            for i in movies.rent:
+                streamingdata['rent'].append((i.provider_name, i.provider_id, i.logo_path))
+        print(streamingdata)
+        return streamingdata
+    except Exception as e:
+        print(f"Error fetching movie streaming data: {e}")
+        return None

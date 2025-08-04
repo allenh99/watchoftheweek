@@ -38,7 +38,7 @@ def test_cluster_diversity():
         
         print(f"\n🎯 CLUSTER-BASED RECOMMENDATIONS:")
         print(f"{'='*60}")
-        recommendations = recommend_clustered(user.id, db, top_n=12, n_clusters=12)
+        recommendations = recommend_clustered(user.id, db, top_n=6, n_clusters=6)
         
         if recommendations is not None and not recommendations.empty:
             print(f"\n✅ SUCCESS: Generated {len(recommendations)} recommendations")
