@@ -4,6 +4,7 @@ from sqlalchemy import desc
 from app.ml_models.ml_models import get_movie_recommendations
 from app.services.recommender import cluster_user_movies
 import pandas as pd
+import random
 from datetime import datetime, timedelta, timezone
 
 def ensure_timezone_aware(dt):
@@ -96,21 +97,21 @@ def generate_weekly_recommendation(user_id: int, db: Session):
     Returns:
         dict: New weekly recommendation
     """
-    source_ratings = cluster_user_movies(user_id, db, n_clusters=1)
-    
+    #source_ratings = cluster_user_movies(user_id, db, n_clusters=1)
+    source_ratings = db.query(Rating).filter(Rating.user_id == user_id).filter(Rating.rating >= 4.0).all()
     if not source_ratings:
         return None
     
     all_user_rated_movies = db.query(Rating.movie_id).filter(Rating.user_id == user_id).all()
     user_rated_movie_ids = [rating.movie_id for rating in all_user_rated_movies]
     
-    best_rating = source_ratings[0]
-    movie = db.query(Movie).filter(Movie.id == best_rating.movie_id).first()
+    selected_movie = source_ratings[random.randint(0, len(source_ratings) - 1)]
+    movie = db.query(Movie).filter(Movie.id == selected_movie.movie_id).first()
     
     if not movie:
         return None
     
-    print(f"Generating weekly recommendation from: {movie.title} (rating: {best_rating.rating})")
+    print(f"Generating weekly recommendation from: {movie.title} (rating: {selected_movie.rating})")
     
     recommendations = get_movie_recommendations(movie.title, top_n=50)
     
@@ -129,7 +130,7 @@ def generate_weekly_recommendation(user_id: int, db: Session):
                 'poster_path': best_recommendation.get('poster_path'),
                 'overview': best_recommendation.get('overview'),
                 'source_movie': movie.title,
-                'user_rating': best_rating.rating,
+                'user_rating': selected_movie.rating,
                 'is_new': True,
                 'generated_date': datetime.now(timezone.utc).isoformat()
             }
