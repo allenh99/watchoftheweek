@@ -36,12 +36,16 @@ def get_movie_data(movie_id):
             'genre_ids': movie.genre_ids,
             'overview': movie.overview,
             'release_date': movie.release_date,
-            'vote_average': movie.vote_average,
-            'vote_count': movie.vote_count,
+            # 'vote_average': movie.vote_average,
+            # 'vote_count': movie.vote_count,
             'poster_path': movie.poster_path,
             'original_language': movie.original_language,
             'cast': cast_names,
-            'director': director
+            'director': director,
+            'backdrop_path': movie.backdrop_path,
+            'runtime': movie.runtime,
+            'release_date': movie.release_date,
+            'tagline': movie.tagline
         }
     except Exception as e:
         print(f"Error fetching movie data: {e}")

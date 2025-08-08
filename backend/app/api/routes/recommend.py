@@ -52,14 +52,17 @@ def recommend_movies(db: Session = Depends(get_db), current_user: User = Depends
             recommendations_list.append({
                 "movie_id": int(row['id']),
                 "title": row['title'],
-                "vote_average": float(row['vote_average']),
-                "vote_count": int(row['vote_count']),
+                #"vote_average": float(row['vote_average']),
+                #"vote_count": int(row['vote_count']),
                 "genre_ids": row['genre_ids'],
                 "weighted_score": float(row['weighted_score']),
                 "source_movies": source_movies_list,
                 "user_rating": float(row['user_rating']),
                 "poster_path": row.get('poster_path', None),
-                "cluster_id": int(row.get('cluster_id', 0))
+                "cluster_id": int(row.get('cluster_id', 0)),
+                "backdrop_path": row.get('backdrop_path', None),
+                "release_date": row.get('release_date', None),
+                "overview": row.get('overview', None)
             })
         
         return {
@@ -111,7 +114,7 @@ def get_weekly_recommendation(user_id: int, db: Session = Depends(get_db), force
     """
     try:
         recommendation = weekly_recommender.get_weekly_recommendation(user_id, db, force_new=force_new)
-        
+        print(recommendation)
         if recommendation is None:
             return {
                 "user_id": user_id,

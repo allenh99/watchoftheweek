@@ -182,6 +182,7 @@ export default function WeeklyRecommendation() {
       if (response.ok) {
         const data = await response.json();
         setStatus(data.status);
+        console.log(data)
       }
     } catch (err) {
       console.error('Failed to fetch status:', err);

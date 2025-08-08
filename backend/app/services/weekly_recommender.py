@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from app.ml_models.ml_models import get_movie_recommendations
 from app.services.recommender import cluster_user_movies
+from app.services.moviedata import get_movie_data
 import pandas as pd
 import random
 from datetime import datetime, timedelta, timezone
@@ -65,7 +66,6 @@ def get_weekly_recommendation(user_id: int, db: Session, force_new: bool = False
         movie = db.query(Movie).filter(Movie.id == user.weekly_recommendation_id).first()
         if movie:
             # Get additional movie data from TMDB if available
-            from app.services.moviedata import get_movie_data
             tmdb_data = get_movie_data(movie.id)
             
             recommendation = {
@@ -74,11 +74,18 @@ def get_weekly_recommendation(user_id: int, db: Session, force_new: bool = False
                 'genre': movie.genre,
                 'director': movie.director,
                 'year': movie.year,
-                'poster_path': tmdb_data.get('poster_path') if tmdb_data else None,
-                'vote_average': tmdb_data.get('vote_average') if tmdb_data else None,
+                # 'poster_path': tmdb_data.get('poster_path') if tmdb_data else None,
+                # 'vote_average': tmdb_data.get('vote_average') if tmdb_data else None,
                 'vote_count': tmdb_data.get('vote_count') if tmdb_data else None,
                 'overview': tmdb_data.get('overview') if tmdb_data else None,
                 'is_new': False,
+                "genre_ids": movie.genre,
+                "poster_path": tmdb_data.get('poster_path', None),
+                "backdrop_path": tmdb_data.get('backdrop_path', None),
+                "release_date": tmdb_data.get('release_date', None),
+                "overview": tmdb_data.get('overview', None),
+                "tagline": tmdb_data.get('tagline', None),
+                "director": tmdb_data.get('director', None),
                 'generated_date': ensure_timezone_aware(user.weekly_recommendation_date).isoformat() if user.weekly_recommendation_date else None
             }
             
@@ -120,17 +127,19 @@ def generate_weekly_recommendation(user_id: int, db: Session):
         
         if not recommendations.empty:
             best_recommendation = recommendations.iloc[0]
-            
+            print(best_recommendation)
             recommendation = {
                 'movie_id': int(best_recommendation['id']),
                 'title': best_recommendation['title'],
-                'vote_average': float(best_recommendation['vote_average']),
-                'vote_count': int(best_recommendation['vote_count']),
                 'genre_ids': best_recommendation['genre_ids'],
-                'poster_path': best_recommendation.get('poster_path'),
-                'overview': best_recommendation.get('overview'),
+                'poster_path': best_recommendation.get('poster_path', None),
+                'overview': best_recommendation.get('overview', None),
                 'source_movie': movie.title,
                 'user_rating': selected_movie.rating,
+                'backdrop_path': best_recommendation.get('backdrop_path', None),
+                'release_date': best_recommendation.get('release_date', None),
+                'tagline': best_recommendation.get('tagline', None),
+                'director': best_recommendation.get('director', None),
                 'is_new': True,
                 'generated_date': datetime.now(timezone.utc).isoformat()
             }
