@@ -29,6 +29,10 @@ interface WeeklyRecommendation {
   is_new?: boolean;
   generated_date?: string;
   streaming_data?: StreamingData;
+  release_date?: string;
+  backdrop_path?: string;
+  tagline?: string;
+  director?: string;
 }
 
 interface User {
@@ -346,6 +350,16 @@ export default function WeeklyRecommendation() {
                   ) : (
                     <div className="w-64 h-96 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
                       <span className="text-gray-500 dark:text-gray-400">No poster available</span>
+                    </div>
+                  )}
+                  {recommendation.backdrop_path && (
+                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                      <img
+                      src={`https://image.tmdb.org/t/p/w500${recommendation.backdrop_path}`}
+                      alt={recommendation.title}
+                      className="w-64 h-96 object-cover rounded-lg shadow-md"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
                     </div>
                   )}
                 </div>

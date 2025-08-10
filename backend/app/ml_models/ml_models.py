@@ -43,6 +43,13 @@ def train_and_save_model(csv_file='app/data/top_rated_movies.csv', model_file='a
     if 'director' not in df.columns:
         df['director'] = None
     
+    # Handle additional optional fields that we want to preserve
+    optional_fields = ['backdrop_path', 'release_date', 'overview', 'tagline', 'poster_path']
+    for field in optional_fields:
+        if field not in df.columns:
+            df[field] = None
+            print(f"Added missing optional field: {field}")
+    
     print(f"Before dropna: {len(df)} rows")
     
     # Check for NaN values in each column
@@ -326,9 +333,36 @@ def get_movie_recommendations(movie_name, top_n=10):
         print("No recommendations found")
         return None
     
-    # Get the recommended movies
+    # Get the recommended movies with all available fields
     try:
-        recommended_movies = _movie_data.iloc[indices][['id', 'title', 'vote_average', 'vote_count', 'genre_ids', 'poster_path']]
+        # Define all the fields we want to return
+        base_fields = ['id', 'title', 'vote_average', 'vote_count', 'genre_ids', 'poster_path']
+        additional_fields = ['backdrop_path', 'release_date', 'overview', 'tagline', 'director']
+        
+        # Check which additional fields exist in the dataset
+        available_fields = base_fields.copy()
+        for field in additional_fields:
+            if field in _movie_data.columns:
+                available_fields.append(field)
+        
+        recommended_movies = _movie_data.iloc[indices][available_fields]
+        
+        # For any missing fields, try to fetch from TMDB API
+        missing_fields = set(additional_fields) - set(_movie_data.columns)
+        if missing_fields:
+            print(f"Fetching missing fields from TMDB: {missing_fields}")
+            # Initialize missing columns
+            for field in missing_fields:
+                recommended_movies[field] = None
+            
+            # Add missing fields by fetching from TMDB
+            for idx, row in recommended_movies.iterrows():
+                movie_id = row['id']
+                tmdb_data = get_movie_data(movie_id)
+                if tmdb_data:
+                    for field in missing_fields:
+                        recommended_movies.loc[idx, field] = tmdb_data.get(field, None)
+        
         return recommended_movies
     except Exception as e:
         print(f"Error getting recommended movies: {e}")

@@ -50,7 +50,20 @@ def get_movie_data(movie_id):
     except Exception as e:
         print(f"Error fetching movie data: {e}")
         return None
-    
+
+def movie_recommendations(movie_id):
+    try:
+        movie = tmdb.movie(movie_id).recommendations()
+        movies = []
+        for movie in movie.results:
+            movies.append({
+                'id': movie.id,
+                'title': movie.original_title,
+            })
+        return movies
+    except Exception as e:
+        print(f"Error fetching movie recommendations: {e}")
+        return None
 
 def get_top_100_rated_movies():
     movies = []

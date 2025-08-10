@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from app.ml_models.ml_models import get_movie_recommendations
 from app.services.recommender import cluster_user_movies
-from app.services.moviedata import get_movie_data
+from app.services.moviedata import get_movie_data, movie_recommendations
 import pandas as pd
 import random
 from datetime import datetime, timedelta, timezone
@@ -109,43 +109,53 @@ def generate_weekly_recommendation(user_id: int, db: Session):
     if not source_ratings:
         return None
     
+    # Randomly select up to 10 movies from source ratings
+    num_to_select = min(10, len(source_ratings))
+    selected_ratings = random.sample(source_ratings, num_to_select)
+    
+    
+    # Get all user-rated movie IDs to exclude from recommendations
     all_user_rated_movies = db.query(Rating.movie_id).filter(Rating.user_id == user_id).all()
     user_rated_movie_ids = [rating.movie_id for rating in all_user_rated_movies]
+    # Store all recommendations from all source movies
+    all_recommendations = {}
     
-    selected_movie = source_ratings[random.randint(0, len(source_ratings) - 1)]
-    movie = db.query(Movie).filter(Movie.id == selected_movie.movie_id).first()
+    # For each selected source movie, get recommendations from TMDB
+    for selected_rating in selected_ratings:
+        recs = movie_recommendations(selected_rating.movie_id)
+        for rec in recs:
+            print(rec)
+            if rec['id'] in all_recommendations:
+                all_recommendations[rec['id']].append(selected_rating.movie_id)
+            else:
+                all_recommendations[rec['id']] = [selected_rating.movie_id]
     
-    if not movie:
-        return None
+    print(all_recommendations)
+    selected_recommendation_id = max(all_recommendations, key=lambda x: len(all_recommendations[x]))
     
-    print(f"Generating weekly recommendation from: {movie.title} (rating: {selected_movie.rating})")
+    #recommendations = get_movie_recommendations(movie.title, top_n=50)
     
-    recommendations = get_movie_recommendations(movie.title, top_n=50)
+    # Get detailed movie data for the selected recommendation
+    detailed_movie_data = get_movie_data(selected_recommendation_id)
     
-    if recommendations is not None and not recommendations.empty:
-        recommendations = recommendations[~recommendations['id'].isin(user_rated_movie_ids)]
+    if detailed_movie_data:
+        recommendation = {
+            'movie_id': selected_recommendation_id,
+            'title': detailed_movie_data['title'],
+            'genre_ids': detailed_movie_data.get('genre_ids', []),
+            'poster_path': detailed_movie_data.get('poster_path', None),
+            'overview': detailed_movie_data.get('overview', None),
+            'source_movie': all_recommendations[selected_recommendation_id],
+            'backdrop_path': detailed_movie_data.get('backdrop_path', None),
+            'release_date': detailed_movie_data.get('release_date', None),
+            'tagline': detailed_movie_data.get('tagline', None),
+            'director': detailed_movie_data.get('director', None),
+            'is_new': True,
+            'generated_date': datetime.now(timezone.utc).isoformat()
+        }
         
-        if not recommendations.empty:
-            best_recommendation = recommendations.iloc[0]
-            print(best_recommendation)
-            recommendation = {
-                'movie_id': int(best_recommendation['id']),
-                'title': best_recommendation['title'],
-                'genre_ids': best_recommendation['genre_ids'],
-                'poster_path': best_recommendation.get('poster_path', None),
-                'overview': best_recommendation.get('overview', None),
-                'source_movie': movie.title,
-                'user_rating': selected_movie.rating,
-                'backdrop_path': best_recommendation.get('backdrop_path', None),
-                'release_date': best_recommendation.get('release_date', None),
-                'tagline': best_recommendation.get('tagline', None),
-                'director': best_recommendation.get('director', None),
-                'is_new': True,
-                'generated_date': datetime.now(timezone.utc).isoformat()
-            }
-            
-            print(f"Selected weekly recommendation: {recommendation['title']}")
-            return recommendation
+        print(f"Selected weekly recommendation: {recommendation['title']} (based on: {recommendation['source_movie']})")
+        return recommendation
     
     return None
 

@@ -114,7 +114,7 @@ def get_weekly_recommendation(user_id: int, db: Session = Depends(get_db), force
     """
     try:
         recommendation = weekly_recommender.get_weekly_recommendation(user_id, db, force_new=force_new)
-        print(recommendation)
+        #print(recommendation)
         if recommendation is None:
             return {
                 "user_id": user_id,
