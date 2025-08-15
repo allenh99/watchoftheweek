@@ -124,7 +124,8 @@ def generate_weekly_recommendation(user_id: int, db: Session):
     for selected_rating in selected_ratings:
         recs = movie_recommendations(selected_rating.movie_id)
         for rec in recs:
-            print(rec)
+            if rec['id'] in user_rated_movie_ids:
+                continue
             if rec['id'] in all_recommendations:
                 all_recommendations[rec['id']].append(selected_rating.movie_id)
             else:
@@ -133,9 +134,6 @@ def generate_weekly_recommendation(user_id: int, db: Session):
     print(all_recommendations)
     selected_recommendation_id = max(all_recommendations, key=lambda x: len(all_recommendations[x]))
     
-    #recommendations = get_movie_recommendations(movie.title, top_n=50)
-    
-    # Get detailed movie data for the selected recommendation
     detailed_movie_data = get_movie_data(selected_recommendation_id)
     
     if detailed_movie_data:

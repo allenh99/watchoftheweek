@@ -19,8 +19,7 @@ def get_movie_data(movie_id):
     try:
         movie = tmdb.movie(movie_id).details()
         credits = tmdb.movie(movie_id).credits()
-        
-
+        movie_images = tmdb.movie(movie_id).images()
         cast = credits.cast[:3] if credits.cast else []
         cast_names = [person.name for person in cast]
         
@@ -42,7 +41,7 @@ def get_movie_data(movie_id):
             'original_language': movie.original_language,
             'cast': cast_names,
             'director': director,
-            'backdrop_path': movie.backdrop_path,
+            'backdrop_path': movie_images.backdrops[random.randint(1, 5)].file_path,
             'runtime': movie.runtime,
             'release_date': movie.release_date,
             'tagline': movie.tagline
@@ -50,6 +49,7 @@ def get_movie_data(movie_id):
     except Exception as e:
         print(f"Error fetching movie data: {e}")
         return None
+get_movie_data(155)
 
 def movie_recommendations(movie_id):
     try:
