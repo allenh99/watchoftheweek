@@ -5,7 +5,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from sqlalchemy import create_engine, inspect, text
 from app.database import Base
-from app.models.models import User, Movie, Rating
+from app.models.models import User, Movie, Rating, Recommendation
 
 def reset_database():
     """Reset the database by dropping all tables and recreating them"""
@@ -49,10 +49,28 @@ def check_database_schema():
             return False
         else:
             print("Movies table schema is correct!")
-            return True
     else:
         print("Movies table does not exist!")
         return False
+    
+    # Check recommendations table
+    if 'recommendations' in inspector.get_table_names():
+        recommendation_columns = [col['name'] for col in inspector.get_columns('recommendations')]
+        print(f"Recommendations table columns: {recommendation_columns}")
+        
+        expected_columns = ['id', 'user_id', 'movie_id', 'source_movies', 'time_generated']
+        missing_columns = [col for col in expected_columns if col not in recommendation_columns]
+        
+        if missing_columns:
+            print(f"Missing columns in recommendations table: {missing_columns}")
+            return False
+        else:
+            print("Recommendations table schema is correct!")
+    else:
+        print("Recommendations table does not exist!")
+        return False
+    
+    return True
 
 def delete_database_file():
     """Delete the database file completely"""

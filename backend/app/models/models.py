@@ -9,9 +9,8 @@ class User(Base):
     username = Column(String, unique=True, nullable=False)
     email = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    weekly_recommendation_id = Column(Integer, nullable=True)
-    weekly_recommendation_date = Column(DateTime, nullable=True)
     ratings = relationship("Rating", back_populates="user")
+    recommendations = relationship("Recommendation", back_populates="user")
 
 class Movie(Base):
     __tablename__ = "movies"
@@ -20,7 +19,7 @@ class Movie(Base):
     genre = Column(String)
     director = Column(String)
     year = Column(Integer)
-    
+    recommendations = relationship("Recommendation", back_populates="movie")
 
 class Rating(Base):
     __tablename__ = "ratings"
@@ -31,3 +30,14 @@ class Rating(Base):
 
     user = relationship("User", back_populates="ratings")
     movie = relationship("Movie")
+
+class Recommendation(Base):
+    __tablename__ = "recommendations"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    movie_id = Column(Integer, ForeignKey("movies.id"))
+    source_movies = Column(String)
+    time_generated = Column(DateTime, default=datetime.utcnow)
+    
+    user = relationship("User", back_populates="recommendations")
+    movie = relationship("Movie", back_populates="recommendations")

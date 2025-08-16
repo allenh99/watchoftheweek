@@ -223,7 +223,11 @@ export default function WeeklyRecommendation() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`http://localhost:8000/api/weekly-recommendation/${currentUser.id}?force_new=${forceNew}`, {
+      const url = forceNew 
+        ? `http://localhost:8000/api/weekly-recommendation/${currentUser.id}?force_new=true`
+        : `http://localhost:8000/api/weekly-recommendation/${currentUser.id}`;
+      
+      const response = await fetch(url, {
         credentials: 'include'
       });
       console.log(response);
@@ -278,7 +282,7 @@ export default function WeeklyRecommendation() {
 
   useEffect(() => {
     if (currentUser) {
-      fetchWeeklyRecommendation();
+      fetchWeeklyRecommendation(false); // Explicitly pass false
       fetchStatus();
     }
   }, [currentUser]);
@@ -342,7 +346,7 @@ export default function WeeklyRecommendation() {
             <h2 className="text-xl font-semibold text-red-200 mb-2">Error</h2>
             <p className="text-red-300">{error}</p>
             <button
-              onClick={() => fetchWeeklyRecommendation()}
+              onClick={() => fetchWeeklyRecommendation(false)}
               className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition-colors"
             >
               Try Again

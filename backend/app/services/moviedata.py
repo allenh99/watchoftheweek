@@ -300,7 +300,7 @@ def get_movie_streaming_data(movie_id):
         if movies.rent:
             for i in movies.rent:
                 streamingdata['rent'].append((i.provider_name, i.provider_id, i.logo_path))
-        print(streamingdata)
+        #print(streamingdata)
         return streamingdata
     except Exception as e:
         print(f"Error fetching movie streaming data: {e}")
