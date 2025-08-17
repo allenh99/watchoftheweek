@@ -120,8 +120,6 @@ def get_weekly_recommendation(user_id: int, db: Session = Depends(get_db), force
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
-        # Get recommendation from the weekly recommender service
-        # This service handles checking for existing recommendations and saving new ones
         recommendation = weekly_recommender.get_weekly_recommendation(user_id, db, force_new=force_new)
         
         if recommendation is None:
@@ -146,12 +144,10 @@ def get_weekly_recommendation_status(user_id: int, db: Session = Depends(get_db)
     Get the status of the user's weekly recommendation
     """
     try:
-        # Check if user exists
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
-        # Check for existing weekly recommendation from the last 7 days
         week_ago = datetime.utcnow() - timedelta(days=7)
         existing_recommendation = db.query(Recommendation).filter(
             Recommendation.user_id == user_id,
