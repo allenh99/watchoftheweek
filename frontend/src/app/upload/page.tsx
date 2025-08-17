@@ -138,10 +138,10 @@ export default function UploadPage() {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Upload Movie Ratings
+                Upload
               </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Welcome back, {currentUser?.username}! Upload your movie ratings to get personalized recommendations
+              <p className="text-gray-600 dark:text-gray-400 m-4">
+                Welcome back, {currentUser?.username}! Upload your movie ratings to get personalized recommendations. currently supports: csv files
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -240,7 +240,7 @@ export default function UploadPage() {
               </p>
               <div className="flex space-x-4">
                 <a
-                  href="/films"
+                  href="/weekly"
                   className="bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-2 rounded transition-colors"
                 >
                   Get Recommendations

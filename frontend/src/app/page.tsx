@@ -132,7 +132,7 @@ export default function Home() {
           <div className="max-w-2xl mx-auto">
             {/* Header */}
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2" style={{ fontFamily: 'var(--font-dm-serif-display)' }}>
                 Movie Recommendation Engine
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
@@ -179,7 +179,7 @@ export default function Home() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Upload Ratings
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-gray-600 dark:text-gray-400 mb-5">
                 Upload your movie ratings to get personalized recommendations
               </p>
               <a
@@ -194,7 +194,7 @@ export default function Home() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 View Films
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-gray-600 dark:text-gray-400 mb-5">
                 Get your movie recommendations of the week
               </p>
               <a
@@ -209,7 +209,7 @@ export default function Home() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 My Account
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-gray-600 dark:text-gray-400 mb-5">
                 Manage your profile and account settings
               </p>
               <a

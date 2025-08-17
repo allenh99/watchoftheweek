@@ -24,7 +24,7 @@ interface WeeklyRecommendation {
   genre_ids?: string;
   poster_path?: string;
   overview?: string;
-  source_movie?: string;
+  source_movie?: string[];
   user_rating?: number;
   is_new?: boolean;
   generated_date?: string;
@@ -339,6 +339,34 @@ export default function WeeklyRecommendation() {
   }
 
   if (error) {
+    const isNoMoviesError = error.includes("No weekly recommendation available") || 
+                           error.includes("not have rated enough movies") ||
+                           error.includes("No movies found");
+    
+    if (isNoMoviesError) {
+      return (
+        <div className="min-h-screen bg-gray-900 py-8">
+          <div className="max-w-4xl mx-auto px-4">
+            <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-8 text-center">
+              <h2 className="text-xl font-semibold text-blue-200 mb-4">No Movies Found</h2>
+              <p className="text-blue-300 mb-6">
+                You need to upload and rate some movies first to get personalized recommendations!
+              </p>
+              <div className="space-y-4">
+                <button
+                  onClick={() => window.location.href = '/upload'}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors mr-4"
+                >
+                  Upload Movies
+                </button>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
     return (
       <div className="min-h-screen bg-gray-900 py-8">
         <div className="max-w-4xl mx-auto px-4">
@@ -389,17 +417,13 @@ export default function WeeklyRecommendation() {
                 <div className="flex flex-col lg:flex-row gap-8">
                   {/* Poster */}
                   <div className="flex-shrink-0">
-                    {recommendation.poster_path ? (
+                    {recommendation.poster_path && (
                       <img
                         src={`https://image.tmdb.org/t/p/w500${recommendation.poster_path}`}
                         alt={recommendation.title}
                         className="w-80 h-[30rem] object-cover rounded-lg shadow-lg"
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
-                    ) : (
-                      <div className="w-80 h-[30rem] bg-gray-700 rounded-lg flex items-center justify-center">
-                        <span className="text-gray-400">No poster available</span>
-                      </div>
                     )}
                   </div>
 
@@ -437,14 +461,20 @@ export default function WeeklyRecommendation() {
                     {recommendation.source_movie && (
                       <div className="mb-8 p-4 bg-gray-800/80 backdrop-blur-sm rounded-lg">
                         <span className="text-sm font-medium text-gray-400">Based on your rating of</span>
-                        <p className="text-lg font-semibold text-white">
-                          {recommendation.source_movie}
-                          {recommendation.user_rating && (
-                            <span className="text-sm text-gray-400 ml-2 font-normal">
-                              (you rated it {recommendation.user_rating}/5)
-                            </span>
-                          )}
-                        </p>
+                        <div className="mt-2">
+                          {recommendation.source_movie.map((movie, index) => (
+                            <div key={index} className="flex items-center mb-2 last:mb-0">
+                              <span className="text-lg font-semibold text-white">
+                                {movie}
+                              </span>
+                              {recommendation.user_rating && (
+                                <span className="text-sm text-gray-400 ml-2 font-normal">
+                                  (you rated it {recommendation.user_rating}/5)
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
 
@@ -485,7 +515,7 @@ export default function WeeklyRecommendation() {
                           </div>
                         ) : (
                           <p className="text-base text-gray-400 font-normal">
-                            No recommendation yet
+                            No recommendation yet. rate and upload some movies, and click the button to get your first recommendation!
                           </p>
                         )}
                       </div>
@@ -508,17 +538,19 @@ export default function WeeklyRecommendation() {
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="bg-gray-800 rounded-lg shadow-md p-8 text-center">
             <h3 className="text-xl font-semibold text-white mb-4">
-              No Recommendation Available
+              No Movies Found
             </h3>
             <p className="text-gray-400 mb-6">
-              Rate some movies to get your first weekly recommendation!
+              You need to upload and rate some movies first to get personalized recommendations!
             </p>
-            <button
-              onClick={() => fetchWeeklyRecommendation(true)}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors"
-            >
-              Try Generating
-            </button>
+            <div className="space-y-4">
+              <button
+                onClick={() => window.location.href = '/upload'}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
+              >
+                Upload Movies
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -135,14 +135,6 @@ export default function AccountPage() {
                   {currentUser.email}
                 </p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  User ID
-                </label>
-                <p className="text-gray-900 dark:text-white font-medium">
-                  {currentUser.id}
-                </p>
-              </div>
             </div>
           </div>
 
@@ -159,10 +151,10 @@ export default function AccountPage() {
                 Logout
               </button>
               <a
-                href="/films"
+                href="/weekly"
                 className="block w-full bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-2 rounded text-center transition-colors"
               >
-                View Recommendations
+                View Recommendation
               </a>
             </div>
           </div>

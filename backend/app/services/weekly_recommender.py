@@ -73,7 +73,7 @@ def get_weekly_recommendation(user_id: int, db: Session, force_new: bool = False
         
         if recommendation:
             print(f"Generated recommendation: {recommendation}")
-            source_movies_str = ",".join(map(str, recommendation.get('source_movie', [])))
+            source_movies_str = ",".join(recommendation.get('source_movie', []))
             print(f"Saving recommendation with source_movies: {source_movies_str}")
             new_recommendation = Recommendation(
                 user_id=user_id,
@@ -98,7 +98,7 @@ def get_weekly_recommendation(user_id: int, db: Session, force_new: bool = False
             
             source_movies = []
             if existing_recommendation.source_movies:
-                source_movies = [int(x.strip()) for x in existing_recommendation.source_movies.split(',') if x.strip()]
+                source_movies = [x.strip() for x in existing_recommendation.source_movies.split(',') if x.strip()]
             
             recommendation = {
                 'movie_id': movie.id,
@@ -154,7 +154,7 @@ def get_weekly_recommendation(user_id: int, db: Session, force_new: bool = False
                 
                 source_movies = []
                 if existing_recommendation.source_movies:
-                    source_movies = [int(x.strip()) for x in existing_recommendation.source_movies.split(',') if x.strip()]
+                    source_movies = [x.strip() for x in existing_recommendation.source_movies.split(',') if x.strip()]
                 
                 recommendation = {
                     'movie_id': movie.id,
@@ -203,21 +203,25 @@ def generate_weekly_recommendation(user_id: int, db: Session):
     all_user_rated_movies = db.query(Rating.movie_id).filter(Rating.user_id == user_id).all()
     user_rated_movie_ids = [rating.movie_id for rating in all_user_rated_movies]
     all_recommendations = {}
-    
+    #print("All user rated movie ids: ", user_rated_movie_ids)
+
     for selected_rating in selected_ratings:
+        source_movie = db.query(Movie).filter(Movie.id == selected_rating.movie_id).first()
+        source_movie_name = source_movie.title if source_movie else f"Movie ID {selected_rating.movie_id}"
+        
         recs = movie_recommendations(selected_rating.movie_id)
         for rec in recs:
             if rec['id'] in user_rated_movie_ids:
                 continue
             if rec['id'] in all_recommendations:
-                all_recommendations[rec['id']].append(selected_rating.movie_id)
+                all_recommendations[rec['id']].append(source_movie_name)
             else:
-                all_recommendations[rec['id']] = [selected_rating.movie_id]
+                all_recommendations[rec['id']] = [source_movie_name]
     
     selected_recommendation_id = max(all_recommendations, key=lambda x: len(all_recommendations[x]))
     detailed_movie_data = get_movie_data(selected_recommendation_id)
-    source_movies = [movie_id for movie_id in all_recommendations[selected_recommendation_id]]
-    print(source_movies)
+    source_movies = all_recommendations[selected_recommendation_id]
+    print(f"Source movies: {source_movies}")
     if detailed_movie_data:
         recommendation = {
             'movie_id': selected_recommendation_id,
