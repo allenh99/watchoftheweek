@@ -24,11 +24,13 @@ A full-stack movie recommendation application that provides personalized movie s
 <!--<img src="public/recs1.png">-->
 <img src="public/recs2.png">
 </p>
+
 ## Features
 
-- **Personalized Recommendations**: Get movie suggestions based on your rating history
+- **Weekly Recommendations**: Receive curated weekly movie picks with source movie explanations
 - **Advanced ML Pipeline**: K-Nearest Neighbors with clustering for diverse recommendations
 - **Real-time Movie Data**: Integration with The Movie Database (TMDB) API
+- **Streaming Information**: See where to watch recommended movies across different platforms
 - **User Authentication**: JWT-based authentication system with user registration/login
 - **User Rating System**: Rate movies individually or upload bulk ratings via CSV
 - **Modern Web Interface**: Responsive Next.js frontend with Tailwind CSS
@@ -41,15 +43,15 @@ A full-stack movie recommendation application that provides personalized movie s
 - **Database**: SQLite with SQLAlchemy ORM
 - **ML Pipeline**: scikit-learn with K-Nearest Neighbors and clustering algorithms
 - **Authentication**: JWT-based authentication with password hashing
-- **External APIs**: The Movie Database (TMDB) integration
-- **Features**: User management, rating system, recommendation engine, CSV upload
+- **External APIs**: The Movie Database (TMDB) integration for movie data and streaming info
+- **Features**: User management, rating system, recommendation engine, CSV upload, weekly recommendations
 
 ### Frontend (Next.js)
 - **Framework**: Next.js 15 with App Router
 - **Styling**: Tailwind CSS for responsive design
 - **Language**: TypeScript for type safety
 - **State Management**: React hooks for client-side state
-- **Pages**: Home, Films, Upload, Account management
+- **Pages**: Home, Weekly Recommendations, Upload, Account management
 
 ## API Endpoints
 
@@ -61,6 +63,8 @@ A full-stack movie recommendation application that provides personalized movie s
 ### Recommendations
 - `GET /api/recommendations` - Get personalized movie recommendations (requires auth)
 - `GET /api/user-top-movies/{user_id}` - Get user's top-rated movies
+- `GET /api/weekly-recommendation/{user_id}` - Get weekly movie recommendation
+- `GET /api/weekly-recommendation-status/{user_id}` - Get weekly recommendation status
 
 ### Ratings
 - `POST /api/ratings` - Add a new movie rating
@@ -88,6 +92,13 @@ A full-stack movie recommendation application that provides personalized movie s
 - `movie_id` (Foreign Key)
 - `rating` (Float)
 
+### Recommendations
+- `id` (Primary Key)
+- `user_id` (Foreign Key)
+- `movie_id` (Foreign Key)
+- `source_movies` (String) - Comma-separated list of source movie names
+- `time_generated` (DateTime) - When the recommendation was created
+
 ## Machine Learning Features
 
 ### Recommendation Engine
@@ -97,12 +108,25 @@ A full-stack movie recommendation application that provides personalized movie s
 - **Weighted Scoring**: Combines user ratings with movie popularity
 - **Diversity Enhancement**: Ensures recommendations span different genres/styles
 
+### Weekly Recommendations
+- **Source Movie Tracking**: Shows which movies influenced each recommendation
+- **Weekly Cycle**: New recommendations generated every 7 days
+- **Caching**: Recommendations stored in database to avoid regeneration
+- **Smart Fallback**: Recreates missing movies from TMDB when needed
+
 ### Model Training
 - Trained on top-rated movies dataset
 - Feature preprocessing with StandardScaler
 - Genre and language one-hot encoding
 - Cast member analysis for similarity matching
 
+## External Integrations
+
+### The Movie Database (TMDB)
+- **Movie Data**: Fetch detailed movie information including cast, director, and metadata
+- **Streaming Data**: Get where movies are available to stream, rent, or buy
+- **Poster & Backdrop Images**: High-quality movie artwork
+- **Search Functionality**: Find movies by name for rating uploads
 
 ### Key Technologies
 - **Backend**: FastAPI, SQLAlchemy, scikit-learn, pandas, numpy, JWT

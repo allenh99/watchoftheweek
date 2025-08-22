@@ -31,7 +31,7 @@ def get_movie_data(movie_id):
         
         return {
             'id': movie.id,
-            'title': movie.original_title,
+            'title': movie.title,
             'genre_ids': movie.genre_ids,
             'overview': movie.overview,
             'release_date': movie.release_date,
@@ -41,7 +41,7 @@ def get_movie_data(movie_id):
             'original_language': movie.original_language,
             'cast': cast_names,
             'director': director,
-            'backdrop_path': movie_images.backdrops[random.randint(1, 5)].file_path,
+            'backdrop_path': movie_images.backdrops[random.randint(1, 7)].file_path,
             'runtime': movie.runtime,
             'release_date': movie.release_date,
             'tagline': movie.tagline
@@ -287,19 +287,24 @@ def get_movie_streaming_data(movie_id):
         movies = tmdb.movie(movie_id).watch_providers().results[country]
         if movies.flatrate:
             for i in movies.flatrate:
-                streamingdata['flatrate'].append((i.provider_name, i.provider_id, i.logo_path))
+                if "Ads" not in i.provider_name:
+                    streamingdata['flatrate'].append((i.provider_name, i.provider_id, i.logo_path))
         if movies.free:
             for i in movies.free:
-                streamingdata['free'].append((i.provider_name, i.provider_id, i.logo_path))
+                if "Ads" not in i.provider_name:
+                    streamingdata['free'].append((i.provider_name, i.provider_id, i.logo_path))
         if movies.ads:
             for i in movies.ads:
-                streamingdata['ads'].append((i.provider_name, i.provider_id, i.logo_path))
+                if "Ads" not in i.provider_name:
+                    streamingdata['ads'].append((i.provider_name, i.provider_id, i.logo_path))
         if movies.buy:
             for i in movies.buy:
-                streamingdata['buy'].append((i.provider_name, i.provider_id, i.logo_path))
+                if "Ads" not in i.provider_name:
+                    streamingdata['buy'].append((i.provider_name, i.provider_id, i.logo_path))
         if movies.rent:
             for i in movies.rent:
-                streamingdata['rent'].append((i.provider_name, i.provider_id, i.logo_path))
+                if "Ads" not in i.provider_name:
+                    streamingdata['rent'].append((i.provider_name, i.provider_id, i.logo_path))
         #print(streamingdata)
         return streamingdata
     except Exception as e:

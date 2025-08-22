@@ -65,14 +65,14 @@ async def upload_ratings(file: UploadFile = File(...), db: Session = Depends(get
     for _, row in df.iterrows():
         try:
             movie_name = row["Name"]
-            print(f"Processing movie: {movie_name}")
+            #print(f"Processing movie: {movie_name}")
             movie_id = get_movie_id_by_name(movie_name)
-            print(f"Found movie ID: {movie_id}")
+            #print(f"Found movie ID: {movie_id}")
             
             if movie_id is None:
                 failed_uploads += 1
                 failed_movies.append(movie_name)
-                print(f"Failed to find movie ID for: {movie_name}")
+                #print(f"Failed to find movie ID for: {movie_name}")
                 continue
             
             # Check if movie already exists in database
@@ -83,7 +83,6 @@ async def upload_ratings(file: UploadFile = File(...), db: Session = Depends(get
                 # Get movie data from TMDB and create movie record
                 movie_data = get_movie_data(movie_id)
                 if movie_data:
-                    # Safely handle genre_ids which might be None
                     genre_ids = movie_data.get('genre_ids', [])
                     if genre_ids is None:
                         genre_ids = []
