@@ -23,6 +23,7 @@ A full-stack movie recommendation application that provides personalized movie s
 <p align="center">
 <!--<img src="public/recs1.png">-->
 <img src="public/recs2.png">
+<img src="public/recs3.png">
 </p>
 
 ## Features
